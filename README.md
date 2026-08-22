@@ -158,8 +158,7 @@ Optionally, delete `C:\Scripts\FolderSummarizer.ps1`.
 
 * **Dependencies**: Native PowerShell and .NET assemblies only—no third-party modules required.
 * **Model Configuration**: Default model is `gemini-3.5-flash`. You can modify the `$MODEL` string in `FolderSummarizer.ps1` if you prefer a different model.
-* **Privacy**: All processing occurs locally. Only metadata (counts, sizes, file types, and sampled filenames) is sent to Google's API. No actual file contents are uploaded.
-
+* **Privacy**: Only file and folder names are sent to Google – the actual file contents are never uploaded. However, be mindful of sensitive filenames (e.g., passwords, personal data). The disclaimer in the output and at the start reminds you not to share the summary publicly without reviewing the filenames first.
 ---
 
 ## License
