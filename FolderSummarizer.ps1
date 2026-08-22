@@ -1,8 +1,49 @@
-
 # ============================================================
 #  FolderSummarizer.ps1
 # ============================================================
 param([string]$FolderPath)
+
+# -- LOAD WINDOWS FORMS EARLY (for the warning dialog) -------
+Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+
+# ============================================================
+#  !  CRITICAL PRIVACY & SECURITY WARNING  !
+# ============================================================
+$warningMessage = @"
+!  PRIVACY & SECURITY WARNING  !
+
+This tool scans file NAMES and folder structures, then sends that
+text to the Google Gemini API (cloud).
+
+While it does NOT upload the actual file contents, the following
+IS transmitted to Google's servers:
+  - Full file paths and file names
+  - Folder hierarchy and directory names
+  - File sizes, extensions, and modification dates
+
+File names may contain sensitive information such as:
+  - Passwords, credentials, or recovery keys in the filename
+  - Usernames, emails, or project codenames
+  - API keys or tokens (e.g., "secret-key.txt")
+
+By proceeding, you assume FULL RESPONSIBILITY for any data
+exposure. This tool provides no warranty or privacy guarantee.
+
+Do you accept this risk and wish to continue?
+"@
+
+$userChoice = [System.Windows.Forms.MessageBox]::Show(
+    $warningMessage,
+    "! SECURITY WARNING - Read Carefully",
+    [System.Windows.Forms.MessageBoxButtons]::YesNo,
+    [System.Windows.Forms.MessageBoxIcon]::Warning
+)
+
+if ($userChoice -eq "No") {
+    Write-Host "Scan cancelled by user."
+    exit
+}
+# ============================================================
 
 # -- CONFIGURE -----------------------------------------------
 $API_KEY = "YOUR_KEY_HERE"
@@ -109,12 +150,18 @@ $($catLines -join "`n")
 
   $($aiSummary -replace "`n", "`n  ")
 
+  $("-" * 62)
+  !!  DISCLAIMER:
+  File names and folder structures were sent to Google Gemini API.
+  User assumes all responsibility for any data disclosed.
+  Do NOT share this output publicly unless you have verified
+  the scanned folder contains no sensitive filenames.
   $div
 
 "@
 
-Add-Type -AssemblyName System.Windows.Forms, System.Drawing
-
+# The form is already created here, but we need to re-add the controls
+# since we moved the Add-Type to the top. The rest is unchanged.
 $form                 = New-Object System.Windows.Forms.Form
 $form.Text            = "Folder Summary - $folderName"
 $form.Size            = New-Object System.Drawing.Size(760, 560)
