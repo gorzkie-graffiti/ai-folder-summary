@@ -49,12 +49,16 @@ security:
 ## Todo 3: Sensitive file handling (critical)
 
 ### Step 1: Filename filtering (fast)
+
 Check the filename against `sensitive_patterns` from config. If matched:
+
 - If `action: "skip"` → don't include in the summary at all.
 - If `action: "mask"` → replace the filename with `[REDACTED]` and don't read its content.
 
 ### Step 2: Content scanning for text files
+
 For files that are text-based (`.txt`, `.md`, `.json`, `.yaml`, `.py`, `.js`, etc.):
+
 - Read first 1KB (or entire file if small) and scan with `content_regex` regexes.
 - If a match is found, either skip the file entirely or redact the matched lines.
 
@@ -131,7 +135,10 @@ def sample_video_frames(video_path, num_frames=5):
 ```
 
 Put this behind a config flag:
+
 - If `video.sample_only_metadata: true` → just get duration, resolution, codec (using `ffprobe`) and skip frame extraction.
 - If `false` → extract `video.sample_frames` frames and report "sampled X frames".
 
 ---
+
+# 
