@@ -1,0 +1,10 @@
+@echo off
+setlocal
+
+powershell.exe ^
+    -NoProfile ^
+    -ExecutionPolicy Bypass ^
+    -WindowStyle Hidden ^
+    -File "%~dp0FolderSummarizer.ps1" %*
+
+endlocal
