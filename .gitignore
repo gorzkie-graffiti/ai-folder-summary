@@ -1,0 +1,19 @@
+﻿# Build output
+/build/
+
+# PowerShell backups / temporary files
+*.bak
+*.tmp
+
+# Local configuration / secrets
+config.yaml
+config.local.yaml
+.env
+.env.*
+
+# Editor / OS junk
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+.DS_Store

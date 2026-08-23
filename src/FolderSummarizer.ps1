@@ -1,10 +1,26 @@
-# ============================================================
+﻿# ============================================================
 #  FolderSummarizer.ps1
 # ============================================================
 param(
     [string]$FolderPath,
     [string]$ConfigPath
 )
+# Resolve folder path when no argument was provided.
+if ([string]::IsNullOrWhiteSpace($FolderPath)) {
+    $FolderPath = (Get-Location).Path
+}
+
+# Normalize and verify the folder path.
+try {
+    $FolderPath = [System.IO.Path]::GetFullPath($FolderPath)
+}
+catch {
+    throw "Invalid folder path: $FolderPath"
+}
+
+if (-not (Test-Path -LiteralPath $FolderPath -PathType Container)) {
+    throw "Folder does not exist: $FolderPath"
+}
 
 # -- LOAD WINDOWS FORMS EARLY (for the warning dialog) -------
 Add-Type -AssemblyName System.Windows.Forms, System.Drawing
@@ -34,7 +50,7 @@ function Parse-YAML {
         $leadingSpaces = $trimmed.Length - $trimmed.TrimStart().Length
 
         # Pop stack when we go back to a shallower indent
-        while ($stack.Count -gt 0 -and $leadingSpaces -le $currentIndent) {
+        while ($stack.Count -gt 0 -and $leadingSpaces -lt $currentIndent) {
             $pop = $stack.Pop()
             $current = $pop.Context
             $currentIndent = $pop.Indent
@@ -74,7 +90,7 @@ function Parse-YAML {
             $value = $Matches[2].Trim()
 
             if ([string]::IsNullOrEmpty($value)) {
-                # Dict or array — peek ahead for "- " to decide
+                # Dict or array â€” peek ahead for "- " to decide
                 $lookAheadIndex = [Array]::IndexOf($Lines, $line) + 1
                 $isDict = $true
                 while ($lookAheadIndex -lt $Lines.Count) {
@@ -118,31 +134,70 @@ function Parse-YAML {
 function Load-Config {
     param([string]$ConfigPath)
 
-    # Resolve config path: explicit param → default location
-    if ([string]::IsNullOrEmpty($ConfigPath)) {
-        $defaultDir = Join-Path $env:USERPROFILE ".folder-summarizer"
-        $ConfigPath = Join-Path $defaultDir "config.yaml"
+    if ([string]::IsNullOrWhiteSpace($ConfigPath)) {
+        $ConfigPath = Join-Path $env:USERPROFILE ".folder-summarizer\config.yaml"
     }
 
-    if (Test-Path $ConfigPath) {
-        Write-Host "[CONFIG] Loading: $ConfigPath" -ForegroundColor Cyan
+    if (-not (Test-Path -LiteralPath $ConfigPath)) {
+        return Get-DefaultConfig
+    }
+
+    try {
+        $raw = [System.IO.File]::ReadAllText(
+            $ConfigPath,
+            [System.Text.Encoding]::UTF8
+        )
+
+        # Start with defaults so missing optional values still work.
+        $config = Get-DefaultConfig
+
+        # --------------------------------------------------------
+        # Reliable scalar values
+        # --------------------------------------------------------
+
+        $apiMatch = [regex]::Match(
+            $raw,
+            '(?m)^\s*api_key\s*:\s*["'']?([^"''\r\n]+)["'']?\s*$'
+        )
+
+        if ($apiMatch.Success) {
+            $config["api_key"] = $apiMatch.Groups[1].Value.Trim()
+        }
+
+        $modelMatch = [regex]::Match(
+            $raw,
+            '(?m)^\s*model\s*:\s*["'']?([^"''\r\n]+)["'']?\s*$'
+        )
+
+        if ($modelMatch.Success) {
+            $config["model"] = $modelMatch.Groups[1].Value.Trim()
+        }
+
+        # --------------------------------------------------------
+        # Use existing parser for the rest when possible
+        # --------------------------------------------------------
+
         try {
-            $raw = [System.IO.File]::ReadAllText($ConfigPath, [System.Text.Encoding]::UTF8)
-            return Parse-YAML ($raw -split "`r?`n")
+            $parsed = Parse-YAML ($raw -split "`r?`n")
+
+            if ($parsed -is [System.Collections.IDictionary]) {
+                foreach ($key in $parsed.Keys) {
+                    if ($key -ne "api_key" -and $key -ne "model") {
+                        $config[$key] = $parsed[$key]
+                    }
+                }
+            }
         }
         catch {
-            Write-Host "[CONFIG] Error parsing config: $_" -ForegroundColor Yellow
-            Write-Host "[CONFIG] Falling back to defaults." -ForegroundColor Yellow
+            # Keep the reliably parsed scalar values and defaults.
         }
-    }
-    else {
-        Write-Host "[CONFIG] No config file found at: $ConfigPath" -ForegroundColor Yellow
-        Write-Host "[CONFIG] Using built-in defaults. Run Install.ps1 to create a config." -ForegroundColor Yellow
-    }
 
-    return Get-DefaultConfig
+        return $config
+    }
+    catch {
+        return Get-DefaultConfig
+    }
 }
-
 function Get-DefaultConfig {
     return [ordered]@{
         api_key = "YOUR_KEY_HERE"
@@ -267,7 +322,7 @@ function Get-CategoryFileGroups {
     $extMap = [ordered]@{
         "Images"    = @(".jpg",".jpeg",".png",".gif",".bmp",".webp",".tiff",".svg",".raw",".heic",".avif",".ico")
         "Documents" = @(".pdf",".docx",".doc",".txt",".xlsx",".xls",".pptx",".ppt",".md",".csv",".rtf",".odt",".pages")
-        "Video"     = @(".mp4",".avi",".mkv",".mov",".wmv",".flv",".webm",".m4v",".ts",".mpg",".mpeg")
+        "Video"     = @(".mp4",".avi",".mkv",".mov",".wmv",".flv",".webm",".m4v",".mpg",".mpeg")
         "Audio"     = @(".mp3",".wav",".flac",".aac",".ogg",".wma",".m4a",".opus",".aiff")
         "Code"      = @(".py",".js",".ts",".cs",".cpp",".c",".java",".go",".rs",".php",".html",".css",".ps1",".sh",".bat",".json",".yaml",".toml",".lua",".rb",".swift",".kt")
         "Archives"  = @(".zip",".rar",".7z",".tar",".gz",".bz2",".xz",".cab",".iso")
@@ -291,7 +346,11 @@ function Get-CategoryFileGroups {
             return $true
         })
 
-        $matched = @($AllFiles | Where-Object { $filteredExts -contains $_.Extension.ToLower() })
+        $matched = @($AllFiles | Where-Object {
+            $filteredExts -contains $_.Extension.ToLower() -and
+            -not (Test-SensitiveFilename $_.Name) -and
+            -not (Test-SensitiveContent $_.FullName)
+        })
         if ($matched.Count -gt 0) {
             $sample = ($matched | Select-Object -First $maxFiles | ForEach-Object { $_.Name }) -join ", "
             $result.CategoryLines.Add("  $($cat.Key.PadRight(12)) [$($matched.Count.ToString().PadLeft(4))] : $sample")
@@ -395,9 +454,14 @@ function Get-VideoMetadata {
 # ============================================================
 
 # -- Load config ------------------------------------------------
+if ([string]::IsNullOrWhiteSpace($ConfigPath)) {
+    $ConfigPath = Join-Path (Join-Path $env:USERPROFILE ".folder-summarizer") "config.yaml"
+}
+
 $config = Load-Config -ConfigPath $ConfigPath
 $API_KEY  = Get-ConfigValue $config "api_key" "YOUR_KEY_HERE"
 $MODEL    = Get-ConfigValue $config "model" "gemini-3.5-flash"
+$API_URL  = "https://generativelanguage.googleapis.com/v1beta/models/$MODEL`:generateContent"
 $securityAction = Get-ConfigValue $config "security.action" "mask"
 
 # -- Initialize sensitive file patterns -------------------------
@@ -410,22 +474,28 @@ $language = Get-WindowsLanguage -Config $config
 $warningMessage = @"
 !  PRIVACY & SECURITY WARNING  !
 
-This tool scans file NAMES and folder structures, then sends that
-text to the Google Gemini API (cloud).
+This tool scans file names and folder structures and sends
+selected metadata to the Google Gemini API (cloud).
 
-While it does NOT upload the actual file contents, the following
-IS transmitted to Google's servers:
-  - Full file paths and file names
-  - Folder hierarchy and directory names
-  - File sizes, extensions, and modification dates
+The following information may be sent:
+  - Folder paths and directory names
+  - Non-sensitive file names
+  - File extensions and file counts
+  - Folder/file structure used to generate the summary
 
-File names may contain sensitive information such as:
-  - Passwords, credentials, or recovery keys in the filename
-  - Usernames, emails, or project codenames
-  - API keys or tokens (e.g., "secret-key.txt")
+Sensitive files matching your configured security patterns
+are excluded from the data sent to Gemini.
+
+This tool does NOT intentionally upload file contents.
+Text files are only inspected locally to detect configured
+sensitive patterns.
+
+However, filenames and folder structures may still contain
+personal or sensitive information.
 
 By proceeding, you assume FULL RESPONSIBILITY for any data
-exposure. This tool provides no warranty or privacy guarantee.
+you choose to process. This tool provides no warranty or
+privacy guarantee.
 
 Do you accept this risk and wish to continue?
 "@
@@ -456,12 +526,28 @@ $promptCats = $groups.PromptCategories
 
 # -- Top-level contents -----------------------------------------
 $topStr = ($topItems | ForEach-Object {
-    if ($_.PSIsContainer) { "  [DIR]  $($_.Name)" }
-    else                  { "  [FILE] $($_.Name)" }
+
+    if (Test-SensitiveFilename $_.Name) {
+        "  [REDACTED]"
+        return
+    }
+
+    if ($_.PSIsContainer) {
+        "  [DIR]  $($_.Name)"
+    }
+    else {
+        if (Test-SensitiveContent $_.FullName) {
+            "  [FILE] [REDACTED]"
+        }
+        else {
+            "  [FILE] $($_.Name)"
+        }
+    }
+
 }) -join "`n"
 
 # -- Video summary line -----------------------------------------
-$videoFiles = @($allFiles | Where-Object { @(".mp4",".avi",".mkv",".mov",".wmv",".flv",".webm",".m4v",".ts",".mpg",".mpeg") -contains $_.Extension.ToLower() })
+$videoFiles = @($allFiles | Where-Object { @(".mp4",".avi",".mkv",".mov",".wmv",".flv",".webm",".m4v",".mpg",".mpeg") -contains $_.Extension.ToLower() })
 $videoSummary = ""
 if ($videoFiles.Count -gt 0) {
     $meta = Get-VideoMetadata -VideoPath $videoFiles[0].FullName -Config $config
@@ -508,22 +594,37 @@ $bodyJson = @{
         }
     )
     generationConfig = @{
-        maxOutputTokens = 999999
+        maxOutputTokens = 8192
     }
 } | ConvertTo-Json -Depth 8
 
 try {
-    $resp      = Invoke-RestMethod $API_URL -Method POST -Headers @{
-        "x-goog-api-key" = $API_KEY
-        "Content-Type"   = "application/json"
-    } -Body $bodyJson -ErrorAction Stop
+    if ([string]::IsNullOrWhiteSpace($API_KEY) -or $API_KEY -eq "YOUR_KEY_HERE") {
+        throw "Gemini API key is missing. Config loaded from: $ConfigPath. Set 'api_key' in that file."
+    }
+
+    $resp = Invoke-RestMethod `
+        -Uri $API_URL `
+        -Method POST `
+        -Headers @{
+            "x-goog-api-key" = $API_KEY
+            "Content-Type"   = "application/json"
+        } `
+        -Body $bodyJson `
+        -ErrorAction Stop
+
+    if (-not $resp.candidates -or -not $resp.candidates[0].content.parts[0].text) {
+        throw "Gemini returned an empty response."
+    }
+
     $aiSummary = $resp.candidates[0].content.parts[0].text.Trim()
-} catch {
+}
+catch {
     $aiSummary = "API error: $($_.Exception.Message)"
 }
 
 # -- Format output ----------------------------------------------
-$folderName = [System.IO.Path]::GetFileName($FolderPath.TrimEnd('\'))
+$folderName = Split-Path -Leaf $FolderPath.TrimEnd('\')
 $div        = "=" * 62
 
 $output = @"
@@ -551,8 +652,10 @@ $($catLines -join "`n")
 
   $("-" * 62)
   !!  DISCLAIMER:
-  File names and folder structures were sent to Google Gemini API.
-  User assumes all responsibility for any data disclosed.
+  File names and folder structures were analyzed for this summary.
+  Files matching configured sensitive patterns are excluded from
+  the data sent to Google Gemini API.
+  User assumes all responsibility for any remaining data disclosed.
   Do NOT share this output publicly unless you have verified
   the scanned folder contains no sensitive filenames.
   $div
@@ -590,3 +693,14 @@ $btn.Add_Click({ $form.Close() })
 $form.Controls.Add($tb)
 $form.Controls.Add($btn)
 [void]$form.ShowDialog()
+
+
+
+
+
+
+
+
+
+
+

@@ -1,9 +1,9 @@
-# Folder Summarizer with AI
+﻿# Folder Summarizer with AI
 
 > **Summarize folder contents instantly with AI**
 > *Finally make sense of mystery folders like `erfhfwhuwf` without opening a single file.*
 
-![Folder Summarizer Logo](src/logo.jpg)
+![Folder Summarizer Logo](assets/logo.jpg)
 
 ---
 
@@ -15,13 +15,13 @@ Get instant descriptions of folder purposes, dominant file types, and structural
 
 ### Features
 
-* **Config file** (`~/.folder-summarizer/config.yaml`) — all settings in one place
-* **Sampling control** — include/exclude categories, set maximum files per group
-* **Sensitive file handling** — detect filenames containing passwords, credentials, API keys, and other sensitive patterns
-* **Video metadata** — extract duration, resolution, and codec information (requires `ffprobe`)
-* **Windows language detection** — automatically detect your system language and request summaries in that language
-* **Easy context-menu integration** — right-click any folder or folder background to run the summarizer
-* **Execution-policy-friendly launcher** — a small `.cmd` wrapper starts PowerShell with a process-scoped `ExecutionPolicy Bypass`, so the application does not require changing your global PowerShell execution policy
+* **Config file** (`~/.folder-summarizer/config.yaml`) â€” all settings in one place
+* **Sampling control** â€” include/exclude categories, set maximum files per group
+* **Sensitive file handling** â€” detect filenames containing passwords, credentials, API keys, and other sensitive patterns
+* **Video metadata** â€” extract duration, resolution, and codec information (requires `ffprobe`)
+* **Windows language detection** â€” automatically detect your system language and request summaries in that language
+* **Easy context-menu integration** â€” right-click any folder or folder background to run the summarizer
+* **Execution-policy-friendly launcher** â€” a small `.cmd` wrapper starts PowerShell with a process-scoped `ExecutionPolicy Bypass`, so the application does not require changing your global PowerShell execution policy
 
 ---
 
@@ -38,7 +38,7 @@ Get instant descriptions of folder purposes, dominant file types, and structural
    * Checks filenames for configured sensitive patterns.
 5. **Prompt Generation**: Directory statistics and sampled filenames are assembled into a structured prompt in the detected Windows language.
 6. **AI Processing**: The script queries the Google Gemini API.
-7. **Display**: A dark-themed summary window displays folder statistics and a concise 3–5 sentence analysis.
+7. **Display**: A dark-themed summary window displays folder statistics and a concise 3â€“5 sentence analysis.
 
 The launcher does **not** permanently change the Windows or PowerShell execution policy. `-ExecutionPolicy Bypass` applies only to the PowerShell process started for the summarizer.
 
@@ -57,25 +57,33 @@ The launcher does **not** permanently change the Windows or PowerShell execution
 
 ### Required Files
 
-Keep these files together before running the installer:
+The installer source files are kept together in the `src\` directory:
 
 ```text
-Install.ps1
-Install-ContextMenu.ps1
-FolderSummarizer.ps1
-Run-FolderSummarizer.cmd
+src/
+├── Install.ps1
+├── Install-ContextMenu.ps1
+├── FolderSummarizer.ps1
+└── Run-FolderSummarizer.cmd
+
+assets/
+├── logo.jpg
+└── unblock.jpg
+
+build/
+└── FolderSummarizer.exe
 ```
 
 ### Quick Setup
 
 1. Download or clone the repository.
 
-2. Open PowerShell in the project directory.
+2. Open PowerShell in the repository directory.
 
 3. Run:
 
    ```powershell
-   .\Install.ps1
+   .\src\Install.ps1
    ```
 
    This creates the configuration directory:
@@ -107,7 +115,7 @@ Run-FolderSummarizer.cmd
 5. Register the File Explorer context menu:
 
    ```powershell
-   .\Install.ps1 -RegisterContextMenu
+   .\src\Install.ps1 -RegisterContextMenu
    ```
 
    **Run this step as Administrator.**
@@ -123,13 +131,13 @@ Run-FolderSummarizer.cmd
 You can run the PowerShell script directly:
 
 ```powershell
-.\FolderSummarizer.ps1 -FolderPath "C:\MyFolder"
+.\src\FolderSummarizer.ps1 -FolderPath "C:\MyFolder"
 ```
 
 You can also use the launcher:
 
 ```cmd
-Run-FolderSummarizer.cmd "C:\MyFolder"
+.\src\Run-FolderSummarizer.cmd "C:\MyFolder"
 ```
 
 The launcher is useful on systems where PowerShell execution policies would otherwise prevent the script from running.
@@ -393,7 +401,7 @@ Review scanned folders and generated output before sharing them publicly.
 
 The context-menu integration does not require permanently changing PowerShell's execution policy.
 
-The registry entry launches:
+The registry entry launches the installed launcher:
 
 ```text
 Run-FolderSummarizer.cmd
@@ -458,7 +466,7 @@ If you no longer need your configuration and API key, delete:
 
 | Problem                                    | Cause                                                                  | Solution                                                                                                |
 | ------------------------------------------ | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| **Context menu item missing**              | Context-menu registration did not complete                             | Run `.\Install.ps1 -RegisterContextMenu` as Administrator and make sure all required files are present. |
+| **Context menu item missing**              | Context-menu registration did not complete                             | Run `.\src\Install.ps1 -RegisterContextMenu` as Administrator and make sure all required files are present. |
 | **Execution policy block error**           | The PowerShell script was launched directly under a restrictive policy | Run `Run-FolderSummarizer.cmd` instead. The launcher uses a process-scoped `-ExecutionPolicy Bypass`.   |
 | **"API Error" appears**                    | Invalid API key, network problem, or API error                         | Verify the Gemini API key in `config.yaml` and check your internet connection.                          |
 | **Pop-up window is not visible**           | The window was opened behind another application                       | Check the PowerShell application on the Windows taskbar.                                                |
@@ -467,7 +475,7 @@ If you no longer need your configuration and API key, delete:
 | **Video metadata is missing**              | `ffprobe` is unavailable                                               | Install [ffmpeg](https://ffmpeg.org/download.html) and make sure `ffprobe` is available in `PATH`.      |
 | **Context menu works but nothing happens** | Launcher or installed script is missing                                | Verify that `C:\Scripts\Run-FolderSummarizer.cmd` and `C:\Scripts\FolderSummarizer.ps1` both exist.     |
 
-![Properties dialog showing the Unblock option](src/unblock.jpg)
+![Properties dialog showing the Unblock option](assets/unblock.jpg)
 
 ---
 
@@ -489,3 +497,4 @@ If you no longer need your configuration and API key, delete:
 ## License
 
 Free to use, modify, and distribute as-is.
+
