@@ -145,7 +145,7 @@ The launcher is useful on systems where PowerShell execution policies would othe
 You can specify a custom configuration file:
 
 ```powershell
-.\FolderSummarizer.ps1 `
+.\src\FolderSummarizer.ps1 `
     -FolderPath "C:\MyFolder" `
     -ConfigPath "C:\my-config.yaml"
 ```
@@ -164,7 +164,7 @@ Example:
 
 ```yaml
 api_key: "YOUR_KEY_HERE"
-model: "gemini-3.5-flash"
+model: "gemini-3.7-flash"
 
 sampling:
   max_files_per_group: 5
@@ -219,7 +219,7 @@ api_key: "YOUR_KEY_HERE"
 The Gemini model used for summarization.
 
 ```yaml
-model: "gemini-3.5-flash"
+model: "gemini-3.7-flash"
 ```
 
 #### `sampling.max_files_per_group`
@@ -338,7 +338,7 @@ If the window does not immediately appear, check the PowerShell icon on your Win
 
   Path    : C:\Users\me\Documents\MyProject
   Files   : 142   |   Folders: 23   |   Size: 456.78 MB
-  Model   : gemini-3.5-flash
+  Model   : gemini-3.7-flash
   Language: en-US
 
   --------------------------------------------------------------
@@ -484,7 +484,7 @@ If you no longer need your configuration and API key, delete:
 * **Dependencies**: Native PowerShell and built-in .NET assemblies. No third-party PowerShell modules are required.
 * **Optional dependency**: `ffmpeg` / `ffprobe` for video metadata extraction.
 * **Configuration parser**: A built-in minimal YAML parser handles nested dictionaries, arrays, quoted strings, and comments.
-* **AI model**: The default configuration uses `gemini-3.5-flash`.
+* **AI model**: The default configuration uses `gemini-3.7-flash`.
 * **Language**: Windows language detection can automatically determine the requested output language.
 * **Context menu**: The installer registers entries for both right-clicking a folder and right-clicking empty space inside a folder.
 * **Launcher**: `Run-FolderSummarizer.cmd` starts the PowerShell application with a process-scoped `ExecutionPolicy Bypass`.
@@ -497,4 +497,5 @@ If you no longer need your configuration and API key, delete:
 ## License
 
 Free to use, modify, and distribute as-is.
+
 
