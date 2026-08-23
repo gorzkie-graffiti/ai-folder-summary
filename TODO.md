@@ -167,6 +167,7 @@ Invoke-RestMethod -Method Post -Uri $apiUrl -Body $body -ContentType "applicatio
 ```
 
 Notes:
+
 - Prefer passing language as a separate field to your API so the model/system prompt can condition on it reliably (e.g. system: "You are a summarizer. Always answer in the requested language: $language").
 - Fall back to a default (e.g., "en") if detection fails.
 - Make this behavior configurable in config.yaml (e.g., ui.detect_windows_language: true/false and ui.override_language: "pl-PL").
@@ -176,6 +177,7 @@ Notes:
 ## Todo 5: Simpler setup
 
 Make onboarding a one-step script that:
+
 - Creates config directory and default config if missing.
 - Installs/checks runtime deps (ffmpeg, python libs or required modules).
 - Optionally registers the Windows context-menu entry (or outputs instructions if admin rights are required).
@@ -225,6 +227,7 @@ if ($RegisterContextMenu) {
 ```
 
 Also:
+
 - Add README snippet: "Run .\install.ps1 -RegisterContextMenu" or just "run install.ps1" to get started.
 - Consider publishing a single EXE/installer later, but for now keep the script minimal and idempotent.
 
@@ -260,7 +263,8 @@ To idzie razem. Zdefiniuj schemat konfiguracji jak poniżej:
 
 Sprawdź nazwę pliku względem `sensitive_patterns` z konfiguracji. Jeśli pasuje:
 
-- Jeśli `action: "skip"` → nie uwzględniaj w podsumowaniu.
+- (odpytuje z configu)
+  Jeśli `action: "skip"` → nie uwzględniaj w podsumowaniu.
 - Jeśli `action: "mask"` → zastąp nazwę pliku `[REDACTED]` i nie czytaj jego zawartości.
 
 ### Krok 2: Skanowanie zawartości dla plików tekstowych
@@ -286,6 +290,7 @@ Dla plików tekstowych (`.txt`, `.md`, `.json`, `.yaml`, `.py`, `.js`, itp.):
 - Użyj `$language`, by poprosić o podsumowanie w tym języku LUB przekaż jako osobne pole do backendu (zalecane).
 
 Przykładowe PowerShell:
+
 ```powershell
 $language = (Get-UICulture).Name
 # lub preferowane:
@@ -302,6 +307,7 @@ Invoke-RestMethod -Method Post -Uri $apiUrl -Body $body -ContentType "applicatio
 ```
 
 Uwaga:
+
 - Lepiej przekazywać język jako oddzielne pole, żeby system prompt mógł się nim konsekwentnie posługiwać.
 - Zapewnij fallback (np. "en") jeśli wykrywanie się nie powiedzie.
 - Dodaj opcję w config.yaml: `ui.detect_windows_language: true/false` i `ui.override_language`.
@@ -311,6 +317,7 @@ Uwaga:
 ## Todo 5: Prostszy setup
 
 Uprość onboarding jednym skryptem:
+
 - Tworzy katalog konfiguracyjny i domyślny config jeśli go brakuje.
 - Sprawdza/instaluje zależności (ffmpeg, biblioteki).
 - Opcjonalnie rejestruje wpis w menu kontekstowym Windows (albo wypisuje instrukcję jeśli wymagane są prawa admina).
@@ -318,9 +325,6 @@ Uprość onboarding jednym skryptem:
 Przykład instalacyjny PowerShell (szkic wyżej) — skrypt tworzy domyślny config i sprawdza ffmpeg.
 
 Dodatkowo:
+
 - Dodaj README z instrukcją „Uruchom .\install.ps1 -RegisterContextMenu” lub po prostu „run install.ps1”.
 - Rozważ pojedynczy instalator/EXE później, ale na razie zachowaj prosty, idempotentny skrypt.
-
----
-
-Wykonałem: przetłumaczyłem cały plik, umieściłem angielską wersję na górze i polską na dole, dodałem Todo 4 i Todo 5 wraz z przykładami (PowerShell + wskazówki implementacyjne). Co dalej: mogę od razu utworzyć commit/PR w repo (zaktualizować TODO.md) albo wygenerować gotowy skrypt install.ps1 i przykładowy kod rejestracji kontekst-menu — daj znać, którą akcję wykonać.
