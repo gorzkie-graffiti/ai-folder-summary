@@ -1,4 +1,4 @@
-﻿# ============================================================
+# ============================================================
 #  FolderSummarizer.ps1
 # ============================================================
 param(
@@ -41,7 +41,10 @@ function Parse-YAML {
     $current = $root
     $currentIndent = 0
 
-    foreach ($line in $Lines) {
+    # FIX: use index-based for loop so lookahead is O(1) instead of O(n)
+    for ($i = 0; $i -lt $Lines.Count; $i++) {
+        $line = $Lines[$i]
+
         # Skip blank lines and comments
         if ($line -match '^\s*$' -or $line -match '^\s*#') { continue }
 
@@ -90,8 +93,9 @@ function Parse-YAML {
             $value = $Matches[2].Trim()
 
             if ([string]::IsNullOrEmpty($value)) {
-                # Dict or array â€” peek ahead for "- " to decide
-                $lookAheadIndex = [Array]::IndexOf($Lines, $line) + 1
+                # Dict or array -- peek ahead for "- " to decide
+                # FIX: use $i + 1 directly (O(1)) instead of [Array]::IndexOf (O(n))
+                $lookAheadIndex = $i + 1
                 $isDict = $true
                 while ($lookAheadIndex -lt $Lines.Count) {
                     $laLine = $Lines[$lookAheadIndex]
@@ -198,6 +202,7 @@ function Load-Config {
         return Get-DefaultConfig
     }
 }
+
 function Get-DefaultConfig {
     return [ordered]@{
         api_key = "YOUR_KEY_HERE"
@@ -214,7 +219,7 @@ function Get-DefaultConfig {
             }
         }
         video = [ordered]@{
-            sample_frames       = 5
+            sample_frames        = 5
             sample_only_metadata = $true
         }
         security = [ordered]@{
@@ -278,7 +283,9 @@ function Test-SensitiveContent {
     $ext = [System.IO.Path]::GetExtension($FilePath).ToLower()
     if ($textExts -notcontains $ext) { return $false }
     try {
-        $content = [System.IO.File]::ReadAllText($FilePath, [System.Text.Encoding]::UTF8).Substring(0, [Math]::Min(4096, [System.IO.File]::ReadAllText($FilePath, [System.Text.Encoding]::UTF8).Length))
+        # FIX: read the file once, then substring — previously read twice in one expression
+        $rawText = [System.IO.File]::ReadAllText($FilePath, [System.Text.Encoding]::UTF8)
+        $content = if ($rawText.Length -gt 4096) { $rawText.Substring(0, 4096) } else { $rawText }
         foreach ($regex in $script:ContentRegexes) {
             try {
                 if ($content -match $regex) { return $true }
@@ -317,7 +324,7 @@ function Get-CategoryFileGroups {
     # Extension whitelist/blacklist
     $extConfig = Get-ConfigValue $Config "sampling.extensions" @()
     $whitelist = if ($extConfig -and $extConfig.Contains('whitelist')) { $extConfig['whitelist'] } else { @() }
-    $blacklist = if ($extConfig -and $extConfig.Contains('blacklist')) { $extConfig['blacklist'] } else { @() }
+    $blacklist  = if ($extConfig -and $extConfig.Contains('blacklist')) { $extConfig['blacklist'] } else { @() }
 
     $extMap = [ordered]@{
         "Images"    = @(".jpg",".jpeg",".png",".gif",".bmp",".webp",".tiff",".svg",".raw",".heic",".avif",".ico")
@@ -329,7 +336,7 @@ function Get-CategoryFileGroups {
     }
 
     $result = [ordered]@{
-        CategoryLines = [System.Collections.Generic.List[string]]::new()
+        CategoryLines    = [System.Collections.Generic.List[string]]::new()
         PromptCategories = [System.Collections.Generic.List[string]]::new()
     }
 
@@ -346,6 +353,7 @@ function Get-CategoryFileGroups {
             return $true
         })
 
+        # Sensitive files are always excluded from the AI prompt regardless of action
         $matched = @($AllFiles | Where-Object {
             $filteredExts -contains $_.Extension.ToLower() -and
             -not (Test-SensitiveFilename $_.Name) -and
@@ -412,9 +420,9 @@ function Get-VideoMetadata {
     } else { 5 }
 
     $result = [ordered]@{
-        Duration = ""
-        Resolution = ""
-        Codec = ""
+        Duration        = ""
+        Resolution      = ""
+        Codec           = ""
         FramesExtracted = 0
     }
 
@@ -459,9 +467,9 @@ if ([string]::IsNullOrWhiteSpace($ConfigPath)) {
 }
 
 $config = Load-Config -ConfigPath $ConfigPath
-$API_KEY  = Get-ConfigValue $config "api_key" "YOUR_KEY_HERE"
-$MODEL    = Get-ConfigValue $config "model" "gemini-3.5-flash"
-$API_URL  = "https://generativelanguage.googleapis.com/v1beta/models/$MODEL`:generateContent"
+$API_KEY        = Get-ConfigValue $config "api_key" "YOUR_KEY_HERE"
+$MODEL          = Get-ConfigValue $config "model" "gemini-3.5-flash"
+$API_URL        = "https://generativelanguage.googleapis.com/v1beta/models/$MODEL`:generateContent"
 $securityAction = Get-ConfigValue $config "security.action" "mask"
 
 # -- Initialize sensitive file patterns -------------------------
@@ -520,30 +528,38 @@ $rawSize  = ($allFiles | Measure-Object Length -Sum).Sum
 $totalSize = if ($rawSize) { [math]::Round($rawSize / 1MB, 2) } else { 0 }
 
 # -- Categorize & sample with sensitive filtering ----------------
-$groups = Get-CategoryFileGroups -AllFiles $allFiles -Config $config
+$groups     = Get-CategoryFileGroups -AllFiles $allFiles -Config $config
 $catLines   = $groups.CategoryLines
 $promptCats = $groups.PromptCategories
 
 # -- Top-level contents -----------------------------------------
+# FIX: $securityAction is now actually honoured.
+# "mask"  -> show [REDACTED] placeholder so the structure is visible
+# "skip"  -> omit the entry entirely (nothing is revealed, not even existence)
 $topStr = ($topItems | ForEach-Object {
+    $item = $_
+    $isSensitiveName    = Test-SensitiveFilename $item.Name
+    $isSensitiveContent = if (-not $item.PSIsContainer) { Test-SensitiveContent $item.FullName } else { $false }
 
-    if (Test-SensitiveFilename $_.Name) {
-        "  [REDACTED]"
-        return
-    }
-
-    if ($_.PSIsContainer) {
-        "  [DIR]  $($_.Name)"
-    }
-    else {
-        if (Test-SensitiveContent $_.FullName) {
-            "  [FILE] [REDACTED]"
+    if ($isSensitiveName -or $isSensitiveContent) {
+        if ($securityAction -eq 'skip') {
+            return   # exclude entirely — not even a placeholder is emitted
         }
         else {
-            "  [FILE] $($_.Name)"
+            # mask (default)
+            if ($item.PSIsContainer) {
+                "  [DIR]  [REDACTED]"
+            } else {
+                "  [FILE] [REDACTED]"
+            }
         }
     }
-
+    elseif ($item.PSIsContainer) {
+        "  [DIR]  $($item.Name)"
+    }
+    else {
+        "  [FILE] $($item.Name)"
+    }
 }) -join "`n"
 
 # -- Video summary line -----------------------------------------
@@ -552,10 +568,10 @@ $videoSummary = ""
 if ($videoFiles.Count -gt 0) {
     $meta = Get-VideoMetadata -VideoPath $videoFiles[0].FullName -Config $config
     $metaParts = @()
-    if ($meta.Duration)   { $metaParts += "Duration: $($meta.Duration)" }
-    if ($meta.Resolution) { $metaParts += "Resolution: $($meta.Resolution)" }
-    if ($meta.Codec)      { $metaParts += "Codec: $($meta.Codec)" }
-    if ($meta.FramesExtracted -gt 0) { $metaParts += "Frames sampled: $($meta.FramesExtracted)" }
+    if ($meta.Duration)               { $metaParts += "Duration: $($meta.Duration)" }
+    if ($meta.Resolution)             { $metaParts += "Resolution: $($meta.Resolution)" }
+    if ($meta.Codec)                  { $metaParts += "Codec: $($meta.Codec)" }
+    if ($meta.FramesExtracted -gt 0)  { $metaParts += "Frames sampled: $($meta.FramesExtracted)" }
     if ($metaParts.Count -gt 0) {
         $videoSummary = "`nVIDEO METADATA ($($videoFiles.Count) video files):`n  $($metaParts -join ' | ')"
     }
@@ -693,14 +709,3 @@ $btn.Add_Click({ $form.Close() })
 $form.Controls.Add($tb)
 $form.Controls.Add($btn)
 [void]$form.ShowDialog()
-
-
-
-
-
-
-
-
-
-
-

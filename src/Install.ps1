@@ -1,11 +1,14 @@
 # ============================================================
-#  Install.ps1 — One-step setup for Folder Summarizer
+#  Install.ps1 -- One-step setup for Folder Summarizer
 #  Run: .\Install.ps1
 #  Run: .\Install.ps1 -RegisterContextMenu
+#  Run: .\Install.ps1 -RegisterContextMenu -InstallDir "D:\Tools\FolderSummarizer"
 # ============================================================
 
 param(
-    [switch]$RegisterContextMenu
+    [switch]$RegisterContextMenu,
+    # FIX: expose InstallDir so it can be forwarded to Install-ContextMenu.ps1
+    [string]$InstallDir = (Join-Path $env:ProgramFiles "FolderSummarizer")
 )
 
 # -- Create config directory and default config ----------------
@@ -40,7 +43,10 @@ if (-not (Test-Path -LiteralPath $configFile)) {
 # Google Gemini API key (required)
 api_key: "YOUR_KEY_HERE"
 
-# AI model to use
+# AI model to use.
+# Supported stable models: gemini-3.5-flash, gemini-3.7-flash
+# gemini-3.5-flash is the default (stable, well-tested).
+# gemini-3.7-flash is the latest Flash model (stronger coding, higher cost).
 model: "gemini-3.5-flash"
 
 # Sampling: how many files to include per category
@@ -72,8 +78,8 @@ security:
     - "token"
     - "recovery"
     - "key"
-    - "\\.pem$"
-    - "\\.key$"
+    - "\.pem$"
+    - "\.key$"
 
   # Text files are scanned for these content patterns
   content_regex:
@@ -82,8 +88,8 @@ security:
     - "gh[pousr]_[a-zA-Z0-9]{36}" # GitHub tokens
 
   # What to do with sensitive files:
-  # "mask" = show [REDACTED]
-  # "skip" = hide entirely
+  # "mask" = show [REDACTED] placeholder (structure is still visible)
+  # "skip" = omit entirely (not even a placeholder is shown or sent)
   action: "mask"
 
 # UI language
@@ -115,13 +121,7 @@ else {
     Write-Host "       Install: https://ffmpeg.org/download.html" -ForegroundColor DarkGray
 }
 
-# Python (optional)
-if (Get-Command python -ErrorAction SilentlyContinue) {
-    Write-Host "  [OK] Python found (optional)" -ForegroundColor Green
-}
-else {
-    Write-Host "  [--] Python not found (optional, not required)" -ForegroundColor DarkGray
-}
+# FIX: removed the Python check — Python is not used anywhere in this tool.
 
 # -- Context menu registration ----------------------------------
 
@@ -130,6 +130,7 @@ $contextMenuRegistered = $false
 if ($RegisterContextMenu) {
     Write-Host ""
     Write-Host "Registering Windows context menu..." -ForegroundColor Cyan
+    Write-Host "  Install directory: $InstallDir" -ForegroundColor DarkGray
 
     $installScript = Join-Path $PSScriptRoot "Install-ContextMenu.ps1"
 
@@ -138,7 +139,8 @@ if ($RegisterContextMenu) {
         powershell.exe `
             -NoProfile `
             -ExecutionPolicy Bypass `
-            -File $installScript
+            -File $installScript `
+            -InstallDir $InstallDir
 
         if ($LASTEXITCODE -eq 0) {
             $contextMenuRegistered = $true
@@ -152,6 +154,7 @@ if ($RegisterContextMenu) {
         Write-Host "  [!!] Install-ContextMenu.ps1 not found alongside Install.ps1" -ForegroundColor Red
     }
 }
+
 # -- Final instructions -----------------------------------------
 
 Write-Host ""
@@ -178,6 +181,7 @@ Write-Host ""
 Write-Host "  2. To add the right-click context menu:" -ForegroundColor White
 Write-Host "     .\Install.ps1 -RegisterContextMenu" -ForegroundColor Yellow
 Write-Host "     (Run as Administrator)" -ForegroundColor DarkGray
+Write-Host "     Optional: -InstallDir 'D:\MyTools\FolderSummarizer' to change install path." -ForegroundColor DarkGray
 Write-Host ""
 
 Write-Host "  3. Right-click any folder > 'Summarize with AI'" -ForegroundColor White

@@ -120,6 +120,12 @@ build/
 
    **Run this step as Administrator.**
 
+   Files are installed to `%ProgramFiles%\FolderSummarizer` by default. To choose a different location, pass `-InstallDir`:
+
+   ```powershell
+   .\src\Install.ps1 -RegisterContextMenu -InstallDir "D:\Tools\FolderSummarizer"
+   ```
+
 6. Right-click a folder or empty space inside a folder and select:
 
    **Summarize with AI**
@@ -164,7 +170,7 @@ Example:
 
 ```yaml
 api_key: "YOUR_KEY_HERE"
-model: "gemini-3.7-flash"
+model: "gemini-3.5-flash"
 
 sampling:
   max_files_per_group: 5
@@ -219,7 +225,7 @@ api_key: "YOUR_KEY_HERE"
 The Gemini model used for summarization.
 
 ```yaml
-model: "gemini-3.7-flash"
+model: "gemini-3.5-flash"
 ```
 
 #### `sampling.max_files_per_group`
@@ -338,7 +344,7 @@ If the window does not immediately appear, check the PowerShell icon on your Win
 
   Path    : C:\Users\me\Documents\MyProject
   Files   : 142   |   Folders: 23   |   Size: 456.78 MB
-  Model   : gemini-3.7-flash
+  Model   : gemini-3.5-flash
   Language: en-US
 
   --------------------------------------------------------------
@@ -445,11 +451,10 @@ Remove-Item `
 
 ### Remove Installed Files
 
-Delete:
+Delete the install directory (default location, adjust if you used `-InstallDir` during setup):
 
-```text
-C:\Scripts\FolderSummarizer.ps1
-C:\Scripts\Run-FolderSummarizer.cmd
+```powershell
+Remove-Item -Path "$env:ProgramFiles\FolderSummarizer" -Recurse -Force
 ```
 
 ### Remove Configuration
@@ -473,7 +478,7 @@ If you no longer need your configuration and API key, delete:
 | **No summary is generated**                | Empty folder, API failure, or rate limit                               | Make sure the folder contains files and verify your API key and network connection.                     |
 | **Sensitive filename was not detected**    | Pattern is missing or does not match the filename                      | Add or adjust the appropriate pattern in `security.sensitive_patterns`.                                 |
 | **Video metadata is missing**              | `ffprobe` is unavailable                                               | Install [ffmpeg](https://ffmpeg.org/download.html) and make sure `ffprobe` is available in `PATH`.      |
-| **Context menu works but nothing happens** | Launcher or installed script is missing                                | Verify that `C:\Scripts\Run-FolderSummarizer.cmd` and `C:\Scripts\FolderSummarizer.ps1` both exist.     |
+| **Context menu works but nothing happens** | Launcher or installed script is missing                                | Verify that `%ProgramFiles%\FolderSummarizer\Run-FolderSummarizer.cmd` and `%ProgramFiles%\FolderSummarizer\FolderSummarizer.ps1` both exist.     |
 
 ![Properties dialog showing the Unblock option](assets/unblock.jpg)
 
@@ -484,7 +489,7 @@ If you no longer need your configuration and API key, delete:
 * **Dependencies**: Native PowerShell and built-in .NET assemblies. No third-party PowerShell modules are required.
 * **Optional dependency**: `ffmpeg` / `ffprobe` for video metadata extraction.
 * **Configuration parser**: A built-in minimal YAML parser handles nested dictionaries, arrays, quoted strings, and comments.
-* **AI model**: The default configuration uses `gemini-3.7-flash`.
+* **AI model**: The default model is `gemini-3.5-flash`. The newer `gemini-3.7-flash` is also supported — change the `model` field in `config.yaml` to switch.
 * **Language**: Windows language detection can automatically determine the requested output language.
 * **Context menu**: The installer registers entries for both right-clicking a folder and right-clicking empty space inside a folder.
 * **Launcher**: `Run-FolderSummarizer.cmd` starts the PowerShell application with a process-scoped `ExecutionPolicy Bypass`.
