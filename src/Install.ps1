@@ -44,9 +44,7 @@ if (-not (Test-Path -LiteralPath $configFile)) {
 api_key: "YOUR_KEY_HERE"
 
 # AI model to use.
-# Supported stable models: gemini-3.5-flash, gemini-3.7-flash
-# gemini-3.5-flash is the default (stable, well-tested).
-# gemini-3.7-flash is the latest Flash model (stronger coding, higher cost).
+# Defaults to gemini-3.5-flash.
 model: "gemini-3.5-flash"
 
 # Sampling: how many files to include per category
@@ -80,6 +78,14 @@ security:
     - "key"
     - "\.pem$"
     - "\.key$"
+    - "tax"
+    - "financial"
+    - "medical"
+    - "bank"
+    - "insurance"
+    - "passport"
+    - "id-"
+    - "identity"
 
   # Text files are scanned for these content patterns
   content_regex:
@@ -96,6 +102,7 @@ security:
 ui:
   detect_windows_language: true
   override_language: ""           # e.g. "pl-PL"
+  warning_accepted: false        # set automatically when you check "Don't show again"
 '@
 
     $default | Set-Content -LiteralPath $configFile -Encoding UTF8

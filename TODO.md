@@ -1,9 +1,9 @@
-﻿# TODO
+# TODO
 
 ## High Priority
 
 - [ ] Improve installer error handling and validation.
-- [ ] Add safer API-key configuration using `GEMINI_API_KEY`.
+- [ ] Add safer API-key configuration using `GEMINI_API_KEY` env var.
 - [ ] Prefer per-user installation where practical.
 - [ ] Make installation fully idempotent.
 - [ ] Add tests for configuration parsing and validation.
@@ -13,10 +13,16 @@
 
 ## Security & Privacy
 
+- [x] Directory names are now scanned for sensitive patterns (not just files).
+- [x] Full path sent to API is redacted per-segment for sensitive folder names.
+- [x] Expanded default sensitive patterns (tax, financial, medical, bank, insurance, passport, identity).
 - [ ] Document API-key handling and precedence clearly.
-- [ ] Improve sensitive filename detection.
 - [ ] Improve secret-pattern detection and configuration validation.
-- [ ] Make privacy warnings more explicit before API requests.
+
+## UX
+
+- [x] Privacy warning is now first-run only with "Don't show again" checkbox.
+- [ ] Add copy-to-clipboard button on the summary window.
 
 ## Future
 
@@ -28,6 +34,6 @@
 
 ## Cleanup
 
-- [ ] Keep README and implementation behavior synchronized.
+- [x] Split README into focused docs (README, INSTALL, CONFIGURATION, SECURITY).
 - [ ] Keep generated binaries out of the Git repository.
 - [ ] Add automated checks for documentation/config consistency.
