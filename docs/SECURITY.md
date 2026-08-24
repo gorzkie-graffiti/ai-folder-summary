@@ -30,12 +30,12 @@ Redaction operates at three levels:
 
 File names are tested against `security.sensitive_patterns`. Matching files are either:
 
-- **`mask`** (default) — shown as `[REDACTED]` locally and excluded from the API prompt
-- **`skip`** — omitted entirely, not even a placeholder
+- **`mask`** (default) - shown as `[REDACTED]` locally and excluded from the API prompt
+- **`skip`** - omitted entirely, not even a placeholder
 
 ### 2. Directory name matching
 
-Same pattern matching is applied to **directory names** at every level — not just files. A folder named `passwords` or `tax-returns` will be redacted even if none of its individual files trigger the filter.
+Same pattern matching is applied to **directory names** at every level - not just files. A folder named `passwords` or `tax-returns` will be redacted even if none of its individual files trigger the filter.
 
 ### 3. Path segment redaction
 

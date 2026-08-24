@@ -11,8 +11,8 @@ Open Settings by double-clicking `C:\Scripts\folder-summarizer.exe`, or edit the
 ## Full Example
 
 ```yaml
-api_key: "AIzaSy..."
-model: "gemini-2.5-flash"
+api_key: "AQ...."
+model: "gemini-3.5-flash"
 
 sampling:
   max_files_per_group: 5
@@ -56,15 +56,15 @@ ui:
 Your Google Gemini API key. **Required.** Set during onboarding.
 
 ```yaml
-api_key: "AIzaSy..."
+api_key: "AQ...."
 ```
 
 ### `model`
 
-Gemini model for summarization. Defaults to `gemini-2.5-flash`.
+Gemini model for summarization. Defaults to `gemini-3.5-flash`.
 
 ```yaml
-model: "gemini-2.5-flash"
+model: "gemini-3.5-flash"
 ```
 
 ### `sampling.max_files_per_group`

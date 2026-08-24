@@ -74,7 +74,7 @@ Remove-Item -Path 'HKLM:\SOFTWARE\Classes\Directory\Background\shell\FolderSumma
 # 2. Remove the exe
 Remove-Item -Path 'C:\Scripts\folder-summarizer.exe' -Force
 
-# 3. Remove config (optional — your settings)
+# 3. Remove config (optional - your settings)
 Remove-Item -Path "$env:USERPROFILE\.folder-summarizer" -Recurse -Force
 ```
 

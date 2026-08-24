@@ -35,5 +35,5 @@
 ## Cleanup
 
 - [x] Split README into focused docs (README, INSTALL, CONFIGURATION, SECURITY).
-- [ ] Keep generated binaries out of the Git repository.
+- [x] Keep generated binaries out of the Git repository.
 - [ ] Add automated checks for documentation/config consistency.

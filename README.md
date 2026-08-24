@@ -5,7 +5,7 @@
 ## How It Works
 
 1. Download `folder-summarizer.exe`
-2. Double-click it — a setup wizard appears
+2. Double-click it - a setup wizard appears
 3. Paste your free Google Gemini API key
 4. Done. Right-click any folder → **Summarize with AI**
 
@@ -15,20 +15,20 @@ No dependencies. No PowerShell scripts to run. No separate installer. The exe is
 
 ## What It Does
 
-Scans a folder's file structure, sends metadata to Google Gemini, and shows a concise summary in a dark-themed popup. No file contents are uploaded — only file names, folder names, extensions, and counts.
+Scans a folder's file structure, sends metadata to Google Gemini, and shows a concise summary in a dark-themed popup. No file contents are uploaded - only file names, folder names, extensions, and counts.
 
 ### Key Features
 
-- **Single exe** — self-installs, self-registers, no external scripts needed
-- **Onboarding wizard** — guides you through API key setup on first run
-- **Context menu integration** — right-click any folder → "Summarize with AI"
-- **Sensitive name redaction** — file/folder names matching security patterns are redacted before sending to the API
-- **Config file** — all settings in `~/.folder-summarizer/config.yaml`
-- **Sampling control** — include/exclude categories, set max files per group
-- **Content scanning** — text files are inspected locally for private keys, tokens, and other secrets
-- **Video metadata** — duration, resolution, codec via `ffprobe` (optional, offered during setup)
-- **Language detection** — auto-detects Windows language for the summary output
-- **No dependencies** — pure PowerShell + built-in .NET, no third-party modules
+- **Single exe** - self-installs, self-registers, no external scripts needed
+- **Onboarding wizard** - guides you through API key setup on first run
+- **Context menu integration** - right-click any folder → "Summarize with AI"
+- **Sensitive name redaction** - file/folder names matching security patterns are redacted before sending to the API
+- **Config file** - all settings in `~/.folder-summarizer/config.yaml`
+- **Sampling control** - include/exclude categories, set max files per group
+- **Content scanning** - text files are inspected locally for private keys, tokens, and other secrets
+- **Video metadata** - duration, resolution, codec via `ffprobe` (optional, offered during setup)
+- **Language detection** - auto-detects Windows language for the summary output
+- **No dependencies** - pure PowerShell + built-in .NET, no third-party modules
 
 ## Quick Start
 
@@ -51,7 +51,7 @@ On Windows 11, the context menu option appears under the classic menu. To see it
 3. Click **"Create API Key"**
 4. Copy the key and paste it into the setup wizard
 
-> **Note:** If the AI Studio page redirects to an "Available Regions" error, try a different Google account — AI Studio can be buggy with region availability.
+> **Note:** If the AI Studio page redirects to an "Available Regions" error, try a different Google account - AI Studio can be buggy with region availability.
 
 ## Compiling from Source
 
