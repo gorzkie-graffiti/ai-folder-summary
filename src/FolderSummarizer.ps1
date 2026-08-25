@@ -1,4 +1,4 @@
-# ============================================================
+﻿# ============================================================
 #  FolderSummarizer.ps1 — Self-installing AI Folder Summarizer
 # ============================================================
 #  Compile to .exe with ps2exe, then just run the exe.
@@ -237,7 +237,7 @@ function Save-Config {
         if ($existing -match '(?m)^(\s*api_key\s*:\s*)["'']?[^
 ]*["'']?(\s*(?:#.*)?)$') {
             $existing = $existing -replace '(?m)^(\s*api_key\s*:\s*)["'']?[^
-]*["'']?(\s*(?:#.*)?)$', ("`$1\"$apiKey\"`$2")
+]*["'']?(\s*(?:#.*)?)$', ("`$1`"$apiKey`"`$2")
         }
         else {
             $existing = "api_key: `"$apiKey`"`n" + $existing
@@ -670,7 +670,7 @@ function Show-Onboarding {
     $lblAIStudioNote.Size = New-Object System.Drawing.Size(470, 30)
     $lblAIStudioNote.Font = New-Object System.Drawing.Font("Segoe UI", 8)
     $lblAIStudioNote.ForeColor = $fgWarn
-    $lblAIStudioNote.Text = "If the page redirects to an "Available Regions" error, try a different Google account — AI Studio can be buggy with region availability."
+    $lblAIStudioNote.Text = "If the page redirects to an ""Available Regions"" error, try a different Google account — AI Studio can be buggy with region availability."
     $form.Controls.Add($lblAIStudioNote)
     $y += 36
 
@@ -1493,11 +1493,12 @@ elsif (-not [string]::IsNullOrWhiteSpace($FolderPath)) {
     Invoke-Summarize -TargetFolder $FolderPath
 }
 elseif ($Settings -or $script:IsInstalled) {
-    # Running from installed location with no args → show settings
+    # Running from installed location with no args â†’ show settings
     # But also check if we got a folder from the context menu via %V
     Show-Settings
 }
 else {
-    # Portable / first run → onboarding
+    # Portable / first run â†’ onboarding
     Show-Onboarding
 }
+
