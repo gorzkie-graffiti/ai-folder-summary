@@ -16,13 +16,13 @@ param(
 #  CONSTANTS
 # ============================================================
 
-$script:INSTALL_DIR   = "C:\Scripts"
-$script:EXE_NAME      = "folder-summarizer.exe"
-$script:INSTALL_PATH  = Join-Path $script:INSTALL_DIR $script:EXE_NAME
-$script:CONFIG_DIR    = Join-Path $env:USERPROFILE ".folder-summarizer"
-$script:CONFIG_FILE   = Join-Path $script:CONFIG_DIR "config.yaml"
+$script:INSTALL_DIR = "C:\Scripts"
+$script:EXE_NAME = "folder-summarizer.exe"
+$script:INSTALL_PATH = Join-Path $script:INSTALL_DIR $script:EXE_NAME
+$script:CONFIG_DIR = Join-Path $env:USERPROFILE ".folder-summarizer"
+$script:CONFIG_FILE = Join-Path $script:CONFIG_DIR "config.yaml"
 $script:REGISTRY_BASE = "HKLM:\SOFTWARE\Classes\Directory\shell\FolderSummary"
-$script:REGISTRY_BG   = "HKLM:\SOFTWARE\Classes\Directory\Background\shell\FolderSummary"
+$script:REGISTRY_BG = "HKLM:\SOFTWARE\Classes\Directory\Background\shell\FolderSummary"
 
 # ============================================================
 #  ARG RESOLUTION
@@ -58,7 +58,8 @@ if ([string]::IsNullOrWhiteSpace($script:MyPath) -or
     -not (Test-Path -LiteralPath $script:MyPath -ErrorAction SilentlyContinue)) {
     try {
         $script:MyPath = [System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName
-    } catch { }
+    }
+    catch { }
 }
 
 $script:IsInstalled = ($script:MyPath -eq $script:INSTALL_PATH)
@@ -159,29 +160,29 @@ function Parse-YAML {
 
 function Get-DefaultConfig {
     return [ordered]@{
-        api_key = ""
-        model   = "gemini-2.5-flash"
+        api_key  = ""
+        model    = "gemini-2.5-flash"
         sampling = [ordered]@{
             max_files_per_group = 5
-            groups = [ordered]@{
-                include = @("Images","Documents","Code","Audio","Video","Archives")
+            groups              = [ordered]@{
+                include = @("Images", "Documents", "Code", "Audio", "Video", "Archives")
                 exclude = @()
             }
-            extensions = [ordered]@{
+            extensions          = [ordered]@{
                 whitelist = @()
-                blacklist = @(".exe",".dll",".pyc",".class")
+                blacklist = @(".exe", ".dll", ".pyc", ".class")
             }
         }
-        video = [ordered]@{
+        video    = [ordered]@{
             sample_frames        = 5
             sample_only_metadata = $true
         }
         security = [ordered]@{
-            sensitive_patterns = @("credential","password","secret","token","recovery","key","\.pem$","\.key$","tax","financial","medical","bank","insurance","passport","id-","identity")
-            content_regex      = @("BEGIN (RSA|OPENSSH|DSA) PRIVATE KEY","sk-[a-zA-Z0-9]{20,}","gh[pousr]_[a-zA-Z0-9]{36}")
+            sensitive_patterns = @("credential", "password", "secret", "token", "recovery", "key", "\.pem$", "\.key$", "tax", "financial", "medical", "bank", "insurance", "passport", "id-", "identity")
+            content_regex      = @("BEGIN (RSA|OPENSSH|DSA) PRIVATE KEY", "sk-[a-zA-Z0-9]{20,}", "gh[pousr]_[a-zA-Z0-9]{36}")
             action             = "mask"
         }
-        ui = [ordered]@{
+        ui       = [ordered]@{
             detect_windows_language = $true
             override_language       = ""
             warning_accepted        = $false
@@ -212,10 +213,12 @@ function Load-Config {
                     }
                 }
             }
-        } catch { }
+        }
+        catch { }
 
         return $config
-    } catch {
+    }
+    catch {
         return Get-DefaultConfig
     }
 }
@@ -312,12 +315,12 @@ function Get-ConfigValue {
 # ============================================================
 
 $script:SensitivePatterns = $null
-$script:ContentRegexes    = $null
+$script:ContentRegexes = $null
 
 function Init-SensitivePatterns {
     param([object]$Config)
     $script:SensitivePatterns = Get-ConfigValue $Config "security.sensitive_patterns" @()
-    $script:ContentRegexes    = Get-ConfigValue $Config "security.content_regex" @()
+    $script:ContentRegexes = Get-ConfigValue $Config "security.content_regex" @()
 }
 
 function Test-SensitiveName {
@@ -348,7 +351,7 @@ function Get-RedactedPath {
 
 function Test-SensitiveContent {
     param([string]$FilePath)
-    $textExts = @(".txt",".md",".json",".yaml",".yml",".py",".js",".ts",".html",".css",".xml",".csv",".log",".conf",".ini",".ps1",".sh",".bat",".cmd",".cs",".java",".go",".rs",".rb",".php",".toml",".cfg")
+    $textExts = @(".txt", ".md", ".json", ".yaml", ".yml", ".py", ".js", ".ts", ".html", ".css", ".xml", ".csv", ".log", ".conf", ".ini", ".ps1", ".sh", ".bat", ".cmd", ".cs", ".java", ".go", ".rs", ".rb", ".php", ".toml", ".cfg")
     $ext = [System.IO.Path]::GetExtension($FilePath).ToLower()
     if ($textExts -notcontains $ext) { return $false }
     try {
@@ -357,7 +360,8 @@ function Test-SensitiveContent {
         foreach ($regex in $script:ContentRegexes) {
             try { if ($content -match $regex) { return $true } } catch { continue }
         }
-    } catch { }
+    }
+    catch { }
     return $false
 }
 
@@ -371,27 +375,30 @@ function Get-CategoryFileGroups {
     $samplingConfig = Get-ConfigValue $Config "sampling" @()
     $maxFiles = if ($samplingConfig -and $samplingConfig.Contains('max_files_per_group')) {
         [int]$samplingConfig['max_files_per_group']
-    } else { 5 }
+    }
+    else { 5 }
 
     $includeGroups = if ($samplingConfig -and $samplingConfig.Contains('groups') -and $samplingConfig['groups'].Contains('include')) {
         $samplingConfig['groups']['include']
-    } else { @("Images","Documents","Code","Audio","Video","Archives") }
+    }
+    else { @("Images", "Documents", "Code", "Audio", "Video", "Archives") }
 
     $excludeGroups = if ($samplingConfig -and $samplingConfig.Contains('groups') -and $samplingConfig['groups'].Contains('exclude')) {
         $samplingConfig['groups']['exclude']
-    } else { @() }
+    }
+    else { @() }
 
     $extConfig = Get-ConfigValue $Config "sampling.extensions" @()
     $whitelist = if ($extConfig -and $extConfig.Contains('whitelist')) { $extConfig['whitelist'] } else { @() }
-    $blacklist  = if ($extConfig -and $extConfig.Contains('blacklist')) { $extConfig['blacklist'] } else { @() }
+    $blacklist = if ($extConfig -and $extConfig.Contains('blacklist')) { $extConfig['blacklist'] } else { @() }
 
     $extMap = [ordered]@{
-        "Images"    = @(".jpg",".jpeg",".png",".gif",".bmp",".webp",".tiff",".svg",".raw",".heic",".avif",".ico")
-        "Documents" = @(".pdf",".docx",".doc",".txt",".xlsx",".xls",".pptx",".ppt",".md",".csv",".rtf",".odt",".pages")
-        "Video"     = @(".mp4",".avi",".mkv",".mov",".wmv",".flv",".webm",".m4v",".mpg",".mpeg")
-        "Audio"     = @(".mp3",".wav",".flac",".aac",".ogg",".wma",".m4a",".opus",".aiff")
-        "Code"      = @(".py",".js",".ts",".cs",".cpp",".c",".java",".go",".rs",".php",".html",".css",".ps1",".sh",".bat",".json",".yaml",".toml",".lua",".rb",".swift",".kt")
-        "Archives"  = @(".zip",".rar",".7z",".tar",".gz",".bz2",".xz",".cab",".iso")
+        "Images"    = @(".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".tiff", ".svg", ".raw", ".heic", ".avif", ".ico")
+        "Documents" = @(".pdf", ".docx", ".doc", ".txt", ".xlsx", ".xls", ".pptx", ".ppt", ".md", ".csv", ".rtf", ".odt", ".pages")
+        "Video"     = @(".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm", ".m4v", ".mpg", ".mpeg")
+        "Audio"     = @(".mp3", ".wav", ".flac", ".aac", ".ogg", ".wma", ".m4a", ".opus", ".aiff")
+        "Code"      = @(".py", ".js", ".ts", ".cs", ".cpp", ".c", ".java", ".go", ".rs", ".php", ".html", ".css", ".ps1", ".sh", ".bat", ".json", ".yaml", ".toml", ".lua", ".rb", ".swift", ".kt")
+        "Archives"  = @(".zip", ".rar", ".7z", ".tar", ".gz", ".bz2", ".xz", ".cab", ".iso")
     }
 
     $result = [ordered]@{
@@ -404,17 +411,17 @@ function Get-CategoryFileGroups {
         if ($excludeGroups -contains $cat.Key) { continue }
 
         $filteredExts = @($cat.Value | Where-Object {
-            $ext = $_.ToLower()
-            if ($whitelist.Count -gt 0 -and $whitelist -notcontains $ext) { return $false }
-            if ($blacklist.Count -gt 0 -and $blacklist -contains $ext) { return $false }
-            return $true
-        })
+                $ext = $_.ToLower()
+                if ($whitelist.Count -gt 0 -and $whitelist -notcontains $ext) { return $false }
+                if ($blacklist.Count -gt 0 -and $blacklist -contains $ext) { return $false }
+                return $true
+            })
 
         $matched = @($AllFiles | Where-Object {
-            $filteredExts -contains $_.Extension.ToLower() -and
-            -not (Test-SensitiveName $_.Name) -and
-            -not (Test-SensitiveContent $_.FullName)
-        })
+                $filteredExts -contains $_.Extension.ToLower() -and
+                -not (Test-SensitiveName $_.Name) -and
+                -not (Test-SensitiveContent $_.FullName)
+            })
         if ($matched.Count -gt 0) {
             $sample = ($matched | Select-Object -First $maxFiles | ForEach-Object { $_.Name }) -join ", "
             $result.CategoryLines.Add("  $($cat.Key.PadRight(12)) [$($matched.Count.ToString().PadLeft(4))] : $sample")
@@ -431,13 +438,14 @@ function Get-CategoryFileGroups {
 function Get-WindowsLanguage {
     param([object]$Config)
     $detectLanguage = Get-ConfigValue $Config "ui.detect_windows_language" $true
-    $override       = Get-ConfigValue $Config "ui.override_language" ""
+    $override = Get-ConfigValue $Config "ui.override_language" ""
     if (-not [string]::IsNullOrEmpty($override)) { return $override }
     if (-not $detectLanguage) { return "en" }
     try {
         $langList = Get-WinUserLanguageList -ErrorAction SilentlyContinue
         if ($langList -and $langList.Count -gt 0) { return $langList[0].LanguageTag }
-    } catch { }
+    }
+    catch { }
     try { return (Get-UICulture).Name } catch { }
     return "en"
 }
@@ -451,10 +459,12 @@ function Get-VideoMetadata {
     $videoConfig = Get-ConfigValue $Config "video" @()
     $sampleOnlyMetadata = if ($videoConfig -and $videoConfig.Contains('sample_only_metadata')) {
         [bool]$videoConfig['sample_only_metadata']
-    } else { $true }
+    }
+    else { $true }
     $sampleFrames = if ($videoConfig -and $videoConfig.Contains('sample_frames')) {
         [int]$videoConfig['sample_frames']
-    } else { 5 }
+    }
+    else { 5 }
 
     $result = [ordered]@{ Duration = ""; Resolution = ""; Codec = ""; FramesExtracted = 0 }
 
@@ -462,11 +472,12 @@ function Get-VideoMetadata {
         try {
             $duration = & ffprobe -v quiet -show_entries format=duration -of csv=p=0 "$VideoPath" 2>$null
             if ($duration) { $result.Duration = [math]::Round([double]$duration, 1).ToString() + "s" }
-            $resolution = & ffprobe -v quiet -select_streams v:0 -show_entries stream=width,height -of csv=p=0 "$VideoPath" 2>$null
+            $resolution = & ffprobe -v quiet -select_streams v:0 -show_entries stream=width, height -of csv=p=0 "$VideoPath" 2>$null
             if ($resolution) { $result.Resolution = $resolution.Replace(",", "x") }
             $codec = & ffprobe -v quiet -select_streams v:0 -show_entries stream=codec_name -of csv=p=0 "$VideoPath" 2>$null
             if ($codec) { $result.Codec = $codec }
-        } catch { }
+        }
+        catch { }
     }
 
     if (-not $sampleOnlyMetadata -and $sampleFrames -gt 0 -and (Get-Command ffmpeg -ErrorAction SilentlyContinue)) {
@@ -477,7 +488,8 @@ function Get-VideoMetadata {
             $frames = (Get-ChildItem "$tmpdir/*.jpg" -ErrorAction SilentlyContinue).Count
             $result.FramesExtracted = $frames
             Remove-Item $tmpdir -Recurse -Force -ErrorAction SilentlyContinue
-        } catch { }
+        }
+        catch { }
     }
     return $result
 }
@@ -493,10 +505,12 @@ function Register-ContextMenu {
         $principal = New-Object Security.Principal.WindowsPrincipal($identity)
         if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
             $needsAdmin = $true
-        } else {
+        }
+        else {
             $needsAdmin = $false
         }
-    } catch { $needsAdmin = $true }
+    }
+    catch { $needsAdmin = $true }
 
     if ($needsAdmin) {
         # Relaunch as admin
@@ -509,7 +523,8 @@ function Register-ContextMenu {
             $psi.WindowStyle = "Hidden"
             [System.Diagnostics.Process]::Start($psi) | Out-Null
             return $true
-        } catch {
+        }
+        catch {
             return $false
         }
     }
@@ -521,7 +536,7 @@ function Register-ContextMenu {
     try {
         # Right-click ON a folder
         $base = "HKLM:\SOFTWARE\Classes\Directory\shell\FolderSummary"
-        $cmd  = "$base\command"
+        $cmd = "$base\command"
         New-Item -Path $base -Force | Out-Null
         New-Item -Path $cmd  -Force | Out-Null
         Set-ItemProperty -Path $base -Name "(Default)" -Value "Summarize with AI"
@@ -530,7 +545,7 @@ function Register-ContextMenu {
 
         # Right-click INSIDE a folder (background)
         $bgBase = "HKLM:\SOFTWARE\Classes\Directory\Background\shell\FolderSummary"
-        $bgCmd  = "$bgBase\command"
+        $bgCmd = "$bgBase\command"
         New-Item -Path $bgBase -Force | Out-Null
         New-Item -Path $bgCmd  -Force | Out-Null
         Set-ItemProperty -Path $bgBase -Name "(Default)" -Value "Summarize with AI"
@@ -538,7 +553,8 @@ function Register-ContextMenu {
         Set-ItemProperty -Path $bgCmd  -Name "(Default)" -Value $command
 
         return $true
-    } catch {
+    }
+    catch {
         return $false
     }
 }
@@ -547,7 +563,8 @@ function Unregister-ContextMenu {
     try {
         Remove-Item -Path "HKLM:\SOFTWARE\Classes\Directory\shell\FolderSummary" -Recurse -Force -ErrorAction SilentlyContinue
         Remove-Item -Path "HKLM:\SOFTWARE\Classes\Directory\Background\shell\FolderSummary" -Recurse -Force -ErrorAction SilentlyContinue
-    } catch { }
+    }
+    catch { }
 }
 
 # ============================================================
@@ -575,14 +592,14 @@ function Invoke-Uninstall {
 
 function Show-Onboarding {
     # ---- Theme colors ----
-    $bgDark   = [System.Drawing.Color]::FromArgb(24, 24, 28)
-    $bgPanel  = [System.Drawing.Color]::FromArgb(32, 32, 38)
-    $bgInput  = [System.Drawing.Color]::FromArgb(42, 42, 50)
-    $fgText   = [System.Drawing.Color]::FromArgb(215, 215, 220)
-    $fgDim    = [System.Drawing.Color]::FromArgb(140, 140, 150)
-    $fgLink   = [System.Drawing.Color]::FromArgb(90, 150, 255)
-    $fgWarn   = [System.Drawing.Color]::FromArgb(255, 200, 80)
-    $bgBtn    = [System.Drawing.Color]::FromArgb(55, 55, 65)
+    $bgDark = [System.Drawing.Color]::FromArgb(24, 24, 28)
+    $bgPanel = [System.Drawing.Color]::FromArgb(32, 32, 38)
+    $bgInput = [System.Drawing.Color]::FromArgb(42, 42, 50)
+    $fgText = [System.Drawing.Color]::FromArgb(215, 215, 220)
+    $fgDim = [System.Drawing.Color]::FromArgb(140, 140, 150)
+    $fgLink = [System.Drawing.Color]::FromArgb(90, 150, 255)
+    $fgWarn = [System.Drawing.Color]::FromArgb(255, 200, 80)
+    $bgBtn = [System.Drawing.Color]::FromArgb(55, 55, 65)
     $bgBtnHov = [System.Drawing.Color]::FromArgb(70, 70, 82)
     $bgBtnAcc = [System.Drawing.Color]::FromArgb(50, 110, 200)
     $fgBtnAcc = [System.Drawing.Color]::FromArgb(255, 255, 255)
@@ -659,8 +676,8 @@ function Show-Onboarding {
     $linkAIStudio.LinkColor = $fgLink
     $linkAIStudio.Text = "https://aistudio.google.com/api-keys"
     $linkAIStudio.Add_LinkClicked({
-        Start-Process "https://aistudio.google.com/api-keys"
-    })
+            Start-Process "https://aistudio.google.com/api-keys"
+        })
     $form.Controls.Add($linkAIStudio)
     $y += 24
 
@@ -695,14 +712,15 @@ function Show-Onboarding {
     $btnShowKey.ForeColor = $fgDim
     $btnShowKey.FlatStyle = "Flat"
     $btnShowKey.Add_Click({
-        if ($btnShowKey.Text -eq "Show") {
-            $txtApiKey.UseSystemPasswordChar = $false
-            $btnShowKey.Text = "Hide"
-        } else {
-            $txtApiKey.UseSystemPasswordChar = $true
-            $btnShowKey.Text = "Show"
-        }
-    })
+            if ($btnShowKey.Text -eq "Show") {
+                $txtApiKey.UseSystemPasswordChar = $false
+                $btnShowKey.Text = "Hide"
+            }
+            else {
+                $txtApiKey.UseSystemPasswordChar = $true
+                $btnShowKey.Text = "Show"
+            }
+        })
     $form.Controls.Add($btnShowKey)
     $y += 42
 
@@ -814,150 +832,154 @@ function Show-Onboarding {
 
     # ---- Install logic ----
     $btnInstall.Add_Click({
-        $apiKey = $txtApiKey.Text.Trim()
-        $installFfmpeg = $chkFfmpeg.Checked
+            $apiKey = $txtApiKey.Text.Trim()
+            $installFfmpeg = $chkFfmpeg.Checked
 
-        # Validate API key
-        if ([string]::IsNullOrWhiteSpace($apiKey)) {
-            $lblStatus.ForeColor = [System.Drawing.Color]::FromArgb(255, 100, 100)
-            $lblStatus.Text = "Please enter your API key."
-            $txtApiKey.Focus()
-            return
-        }
+            # Validate API key
+            if ([string]::IsNullOrWhiteSpace($apiKey)) {
+                $lblStatus.ForeColor = [System.Drawing.Color]::FromArgb(255, 100, 100)
+                $lblStatus.Text = "Please enter your API key."
+                $txtApiKey.Focus()
+                return
+            }
 
-        if ($apiKey.Length -lt 10) {
-            $lblStatus.ForeColor = [System.Drawing.Color]::FromArgb(255, 100, 100)
-            $lblStatus.Text = "That doesn't look like a valid API key."
-            $txtApiKey.Focus()
-            return
-        }
+            if ($apiKey.Length -lt 10) {
+                $lblStatus.ForeColor = [System.Drawing.Color]::FromArgb(255, 100, 100)
+                $lblStatus.Text = "That doesn't look like a valid API key."
+                $txtApiKey.Focus()
+                return
+            }
 
-        $btnInstall.Enabled = $false
-        $btnCancel.Enabled = $false
-        $txtApiKey.Enabled = $false
-        $chkFfmpeg.Enabled = $false
+            $btnInstall.Enabled = $false
+            $btnCancel.Enabled = $false
+            $txtApiKey.Enabled = $false
+            $chkFfmpeg.Enabled = $false
 
-        # Step 1: Save config
-        $lblStatus.ForeColor = $fgDim
-        $lblStatus.Text = "Saving configuration..."
-        $form.Refresh()
-
-        try {
-            $config = Get-DefaultConfig
-            $config["api_key"] = $apiKey
-            Save-Config -Config $config
-        } catch {
-            $lblStatus.ForeColor = [System.Drawing.Color]::FromArgb(255, 100, 100)
-            $lblStatus.Text = "Failed to save config: $($_.Exception.Message)"
-            $btnInstall.Enabled = $true
-            $btnCancel.Enabled = $true
-            $txtApiKey.Enabled = $true
-            $chkFfmpeg.Enabled = $true
-            return
-        }
-
-        # Step 2: Install ffmpeg (optional)
-        if ($installFfmpeg) {
-            $lblStatus.Text = "Installing ffmpeg..."
+            # Step 1: Save config
+            $lblStatus.ForeColor = $fgDim
+            $lblStatus.Text = "Saving configuration..."
             $form.Refresh()
 
             try {
-                if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
-                    $lblStatus.ForeColor = $fgWarn
-                    $lblStatus.Text = "winget not found. Install ffmpeg manually from ffmpeg.org"
-                }
-                else {
-                    $proc = Start-Process -FilePath "winget" -ArgumentList "install", "Gyan.FFmpeg", "--accept-source-agreements", "--accept-package-agreements" -Wait -PassThru -NoNewWindow -ErrorAction Stop
-                    if ($proc.ExitCode -ne 0) {
+                $config = Get-DefaultConfig
+                $config["api_key"] = $apiKey
+                Save-Config -Config $config
+            }
+            catch {
+                $lblStatus.ForeColor = [System.Drawing.Color]::FromArgb(255, 100, 100)
+                $lblStatus.Text = "Failed to save config: $($_.Exception.Message)"
+                $btnInstall.Enabled = $true
+                $btnCancel.Enabled = $true
+                $txtApiKey.Enabled = $true
+                $chkFfmpeg.Enabled = $true
+                return
+            }
+
+            # Step 2: Install ffmpeg (optional)
+            if ($installFfmpeg) {
+                $lblStatus.Text = "Installing ffmpeg..."
+                $form.Refresh()
+
+                try {
+                    if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
                         $lblStatus.ForeColor = $fgWarn
-                        $lblStatus.Text = "winget ffmpeg install may have failed. Check manually."
+                        $lblStatus.Text = "winget not found. Install ffmpeg manually from ffmpeg.org"
+                    }
+                    else {
+                        $proc = Start-Process -FilePath "winget" -ArgumentList "install", "Gyan.FFmpeg", "--accept-source-agreements", "--accept-package-agreements" -Wait -PassThru -NoNewWindow -ErrorAction Stop
+                        if ($proc.ExitCode -ne 0) {
+                            $lblStatus.ForeColor = $fgWarn
+                            $lblStatus.Text = "winget ffmpeg install may have failed. Check manually."
+                        }
                     }
                 }
-            } catch {
-                $lblStatus.ForeColor = $fgWarn
-                $lblStatus.Text = "Could not install ffmpeg automatically. Install it manually from ffmpeg.org"
-            }
-        }
-
-        # Step 3: Copy exe to C:\Scripts\
-        $lblStatus.ForeColor = $fgDim
-        $lblStatus.Text = "Installing to $script:INSTALL_DIR..."
-        $form.Refresh()
-
-        try {
-            if (-not (Test-Path -LiteralPath $script:INSTALL_DIR)) {
-                New-Item -ItemType Directory -Path $script:INSTALL_DIR -Force | Out-Null
-            }
-            Copy-Item -LiteralPath $script:MyPath -Destination $script:INSTALL_PATH -Force
-        } catch {
-            $lblStatus.ForeColor = [System.Drawing.Color]::FromArgb(255, 100, 100)
-            $lblStatus.Text = "Failed to copy to $script:INSTALL_DIR : $($_.Exception.Message)"
-            $btnInstall.Enabled = $true
-            $btnCancel.Enabled = $true
-            return
-        }
-
-        # Step 4: Register context menu (needs admin — will UAC prompt)
-        $lblStatus.Text = "Registering context menu (you may see a UAC prompt)..."
-        $form.Refresh()
-
-        $registered = $false
-        try {
-            # Try direct registration first (in case we're already admin)
-            $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
-            $principal = New-Object Security.Principal.WindowsPrincipal($identity)
-            if ($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-                $escapedExe = $script:INSTALL_PATH.Replace('"', '""')
-                $command = "`"$escapedExe`" `"%V`""
-
-                $base = "HKLM:\SOFTWARE\Classes\Directory\shell\FolderSummary"
-                $cmd  = "$base\command"
-                New-Item -Path $base -Force | Out-Null
-                New-Item -Path $cmd  -Force | Out-Null
-                Set-ItemProperty -Path $base -Name "(Default)" -Value "Summarize with AI"
-                Set-ItemProperty -Path $base -Name "Icon" -Value "shell32.dll,21"
-                Set-ItemProperty -Path $cmd  -Name "(Default)" -Value $command
-
-                $bgBase = "HKLM:\SOFTWARE\Classes\Directory\Background\shell\FolderSummary"
-                $bgCmd  = "$bgBase\command"
-                New-Item -Path $bgBase -Force | Out-Null
-                New-Item -Path $bgCmd  -Force | Out-Null
-                Set-ItemProperty -Path $bgBase -Name "(Default)" -Value "Summarize with AI"
-                Set-ItemProperty -Path $bgBase -Name "Icon" -Value "shell32.dll,21"
-                Set-ItemProperty -Path $bgCmd  -Name "(Default)" -Value $command
-                $registered = $true
-            }
-            else {
-                # Relaunch self as admin to register
-                $psi = New-Object System.Diagnostics.ProcessStartInfo
-                $psi.FileName = $script:INSTALL_PATH
-                $psi.Arguments = "--register-context-menu"
-                $psi.Verb = "runas"
-                $psi.UseShellExecute = $true
-                $psi.WindowStyle = "Hidden"
-                $adminProc = [System.Diagnostics.Process]::Start($psi)
-                if ($null -ne $adminProc) {
-                    $adminProc.WaitForExit(30000)
-                    if ($adminProc.ExitCode -eq 0) { $registered = $true }
+                catch {
+                    $lblStatus.ForeColor = $fgWarn
+                    $lblStatus.Text = "Could not install ffmpeg automatically. Install it manually from ffmpeg.org"
                 }
             }
-        } catch {
-            # Silently fail — user can register later
-        }
 
-        # Done
-        if ($registered) {
-            $lblStatus.ForeColor = [System.Drawing.Color]::FromArgb(100, 220, 120)
-            $lblStatus.Text = "Done! Right-click any folder > ""Summarize with AI"" (Win11: Shift+F10 or 'Show more options')"
-        }
-        else {
-            $lblStatus.ForeColor = $fgWarn
-            $lblStatus.Text = "Installed but context menu not registered. Re-run as Administrator to register."
-        }
+            # Step 3: Copy exe to C:\Scripts\
+            $lblStatus.ForeColor = $fgDim
+            $lblStatus.Text = "Installing to $script:INSTALL_DIR..."
+            $form.Refresh()
 
-        $btnInstall.Text = "Done"
-        $btnInstall.Add_Click({ $form.Close() })
-    })
+            try {
+                if (-not (Test-Path -LiteralPath $script:INSTALL_DIR)) {
+                    New-Item -ItemType Directory -Path $script:INSTALL_DIR -Force | Out-Null
+                }
+                Copy-Item -LiteralPath $script:MyPath -Destination $script:INSTALL_PATH -Force
+            }
+            catch {
+                $lblStatus.ForeColor = [System.Drawing.Color]::FromArgb(255, 100, 100)
+                $lblStatus.Text = "Failed to copy to $script:INSTALL_DIR : $($_.Exception.Message)"
+                $btnInstall.Enabled = $true
+                $btnCancel.Enabled = $true
+                return
+            }
+
+            # Step 4: Register context menu (needs admin — will UAC prompt)
+            $lblStatus.Text = "Registering context menu (you may see a UAC prompt)..."
+            $form.Refresh()
+
+            $registered = $false
+            try {
+                # Try direct registration first (in case we're already admin)
+                $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+                $principal = New-Object Security.Principal.WindowsPrincipal($identity)
+                if ($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+                    $escapedExe = $script:INSTALL_PATH.Replace('"', '""')
+                    $command = "`"$escapedExe`" `"%V`""
+
+                    $base = "HKLM:\SOFTWARE\Classes\Directory\shell\FolderSummary"
+                    $cmd = "$base\command"
+                    New-Item -Path $base -Force | Out-Null
+                    New-Item -Path $cmd  -Force | Out-Null
+                    Set-ItemProperty -Path $base -Name "(Default)" -Value "Summarize with AI"
+                    Set-ItemProperty -Path $base -Name "Icon" -Value "shell32.dll,21"
+                    Set-ItemProperty -Path $cmd  -Name "(Default)" -Value $command
+
+                    $bgBase = "HKLM:\SOFTWARE\Classes\Directory\Background\shell\FolderSummary"
+                    $bgCmd = "$bgBase\command"
+                    New-Item -Path $bgBase -Force | Out-Null
+                    New-Item -Path $bgCmd  -Force | Out-Null
+                    Set-ItemProperty -Path $bgBase -Name "(Default)" -Value "Summarize with AI"
+                    Set-ItemProperty -Path $bgBase -Name "Icon" -Value "shell32.dll,21"
+                    Set-ItemProperty -Path $bgCmd  -Name "(Default)" -Value $command
+                    $registered = $true
+                }
+                else {
+                    # Relaunch self as admin to register
+                    $psi = New-Object System.Diagnostics.ProcessStartInfo
+                    $psi.FileName = $script:INSTALL_PATH
+                    $psi.Arguments = "--register-context-menu"
+                    $psi.Verb = "runas"
+                    $psi.UseShellExecute = $true
+                    $psi.WindowStyle = "Hidden"
+                    $adminProc = [System.Diagnostics.Process]::Start($psi)
+                    if ($null -ne $adminProc) {
+                        $adminProc.WaitForExit(30000)
+                        if ($adminProc.ExitCode -eq 0) { $registered = $true }
+                    }
+                }
+            }
+            catch {
+                # Silently fail — user can register later
+            }
+
+            # Done
+            if ($registered) {
+                $lblStatus.ForeColor = [System.Drawing.Color]::FromArgb(100, 220, 120)
+                $lblStatus.Text = "Done! Right-click any folder > ""Summarize with AI"" (Win11: Shift+F10 or 'Show more options')"
+            }
+            else {
+                $lblStatus.ForeColor = $fgWarn
+                $lblStatus.Text = "Installed but context menu not registered. Re-run as Administrator to register."
+            }
+
+            $btnInstall.Text = "Done"
+            $btnInstall.Add_Click({ $form.Close() })
+        })
 
     $btnCancel.Add_Click({ $form.Close() })
 
@@ -986,12 +1008,12 @@ function Show-Onboarding {
 function Show-Settings {
     $config = Load-Config
 
-    $bgDark   = [System.Drawing.Color]::FromArgb(24, 24, 28)
-    $bgInput  = [System.Drawing.Color]::FromArgb(42, 42, 50)
-    $fgText   = [System.Drawing.Color]::FromArgb(215, 215, 220)
-    $fgDim    = [System.Drawing.Color]::FromArgb(140, 140, 150)
-    $fgLink   = [System.Drawing.Color]::FromArgb(90, 150, 255)
-    $bgBtn    = [System.Drawing.Color]::FromArgb(55, 55, 65)
+    $bgDark = [System.Drawing.Color]::FromArgb(24, 24, 28)
+    $bgInput = [System.Drawing.Color]::FromArgb(42, 42, 50)
+    $fgText = [System.Drawing.Color]::FromArgb(215, 215, 220)
+    $fgDim = [System.Drawing.Color]::FromArgb(140, 140, 150)
+    $fgLink = [System.Drawing.Color]::FromArgb(90, 150, 255)
+    $bgBtn = [System.Drawing.Color]::FromArgb(55, 55, 65)
     $bgBtnAcc = [System.Drawing.Color]::FromArgb(50, 110, 200)
     $fgBtnAcc = [System.Drawing.Color]::FromArgb(255, 255, 255)
     $fontMain = New-Object System.Drawing.Font("Segoe UI", 9)
@@ -1049,14 +1071,15 @@ function Show-Settings {
     $btnShowKey.ForeColor = $fgDim
     $btnShowKey.FlatStyle = "Flat"
     $btnShowKey.Add_Click({
-        if ($btnShowKey.Text -eq "Show") {
-            $txtApiKey.UseSystemPasswordChar = $false
-            $btnShowKey.Text = "Hide"
-        } else {
-            $txtApiKey.UseSystemPasswordChar = $true
-            $btnShowKey.Text = "Show"
-        }
-    })
+            if ($btnShowKey.Text -eq "Show") {
+                $txtApiKey.UseSystemPasswordChar = $false
+                $btnShowKey.Text = "Hide"
+            }
+            else {
+                $txtApiKey.UseSystemPasswordChar = $true
+                $btnShowKey.Text = "Show"
+            }
+        })
     $form.Controls.Add($btnShowKey)
     $y += 42
 
@@ -1144,17 +1167,17 @@ function Show-Settings {
     $form.Controls.Add($btnClose)
 
     $btnSave.Add_Click({
-        $config["api_key"] = $txtApiKey.Text.Trim()
-        $config["model"] = $txtModel.Text.Trim()
-        Save-Config -Config $config
-        $lblStatus.ForeColor = [System.Drawing.Color]::FromArgb(100, 220, 120)
-        $lblStatus.Text = "Saved."
-    })
+            $config["api_key"] = $txtApiKey.Text.Trim()
+            $config["model"] = $txtModel.Text.Trim()
+            Save-Config -Config $config
+            $lblStatus.ForeColor = [System.Drawing.Color]::FromArgb(100, 220, 120)
+            $lblStatus.Text = "Saved."
+        })
 
     $btnUninstall.Add_Click({
-        $form.Close()
-        Invoke-Uninstall
-    })
+            $form.Close()
+            Invoke-Uninstall
+        })
 
     $btnClose.Add_Click({ $form.Close() })
 
@@ -1171,7 +1194,8 @@ function Invoke-Summarize {
     # Normalize and verify the folder path
     try {
         $TargetFolder = [System.IO.Path]::GetFullPath($TargetFolder)
-    } catch {
+    }
+    catch {
         Show-ErrorPopup "Invalid folder path: $TargetFolder"
         return
     }
@@ -1183,9 +1207,9 @@ function Invoke-Summarize {
 
     # Load config
     $config = Load-Config
-    $API_KEY        = Get-ConfigValue $config "api_key" ""
-    $MODEL          = Get-ConfigValue $config "model" "gemini-2.5-flash"
-    $API_URL        = "https://generativelanguage.googleapis.com/v1beta/models/$MODEL`:generateContent"
+    $API_KEY = Get-ConfigValue $config "api_key" ""
+    $MODEL = Get-ConfigValue $config "model" "gemini-2.5-flash"
+    $API_URL = "https://generativelanguage.googleapis.com/v1beta/models/$MODEL`:generateContent"
     $securityAction = Get-ConfigValue $config "security.action" "mask"
 
     Init-SensitivePatterns -Config $config
@@ -1201,22 +1225,22 @@ function Invoke-Summarize {
     # First-run privacy warning
     $warningAccepted = Get-ConfigValue $config "ui.warning_accepted" $false
     if (-not $warningAccepted) {
-        $warnForm                 = New-Object System.Windows.Forms.Form
-        $warnForm.Text            = "Folder Summarizer — Privacy Notice"
-        $warnForm.Size            = New-Object System.Drawing.Size(440, 340)
-        $warnForm.StartPosition   = "CenterScreen"
+        $warnForm = New-Object System.Windows.Forms.Form
+        $warnForm.Text = "Folder Summarizer — Privacy Notice"
+        $warnForm.Size = New-Object System.Drawing.Size(440, 340)
+        $warnForm.StartPosition = "CenterScreen"
         $warnForm.FormBorderStyle = "FixedDialog"
-        $warnForm.MaximizeBox     = $false
-        $warnForm.MinimizeBox     = $false
-        $warnForm.BackColor       = [System.Drawing.Color]::FromArgb(30, 30, 30)
-        $warnForm.TopMost         = $true
+        $warnForm.MaximizeBox = $false
+        $warnForm.MinimizeBox = $false
+        $warnForm.BackColor = [System.Drawing.Color]::FromArgb(30, 30, 30)
+        $warnForm.TopMost = $true
 
-        $warnLabel               = New-Object System.Windows.Forms.Label
-        $warnLabel.Location      = New-Object System.Drawing.Point(16, 16)
-        $warnLabel.Size          = New-Object System.Drawing.Size(408, 210)
-        $warnLabel.ForeColor     = [System.Drawing.Color]::FromArgb(220, 220, 220)
-        $warnLabel.Font          = New-Object System.Drawing.Font("Segoe UI", 9)
-        $warnLabel.Text          = @"
+        $warnLabel = New-Object System.Windows.Forms.Label
+        $warnLabel.Location = New-Object System.Drawing.Point(16, 16)
+        $warnLabel.Size = New-Object System.Drawing.Size(408, 210)
+        $warnLabel.ForeColor = [System.Drawing.Color]::FromArgb(220, 220, 220)
+        $warnLabel.Font = New-Object System.Drawing.Font("Segoe UI", 9)
+        $warnLabel.Text = @"
 This tool sends folder/file names and directory structure
 to Google Gemini API to generate a summary.
 
@@ -1229,41 +1253,41 @@ still reveal information even when contents are not sent.
 Review scanned folders before sharing results.
 "@
 
-        $dontShowCb             = New-Object System.Windows.Forms.CheckBox
-        $dontShowCb.Location     = New-Object System.Drawing.Point(16, 238)
-        $dontShowCb.Size        = New-Object System.Drawing.Size(300, 24)
-        $dontShowCb.ForeColor   = [System.Drawing.Color]::FromArgb(180, 180, 180)
-        $dontShowCb.Font        = New-Object System.Drawing.Font("Segoe UI", 9)
-        $dontShowCb.Text        = "Don't show this again"
-        $dontShowCb.BackColor   = [System.Drawing.Color]::FromArgb(30, 30, 30)
-        $dontShowCb.FlatStyle   = "Flat"
+        $dontShowCb = New-Object System.Windows.Forms.CheckBox
+        $dontShowCb.Location = New-Object System.Drawing.Point(16, 238)
+        $dontShowCb.Size = New-Object System.Drawing.Size(300, 24)
+        $dontShowCb.ForeColor = [System.Drawing.Color]::FromArgb(180, 180, 180)
+        $dontShowCb.Font = New-Object System.Drawing.Font("Segoe UI", 9)
+        $dontShowCb.Text = "Don't show this again"
+        $dontShowCb.BackColor = [System.Drawing.Color]::FromArgb(30, 30, 30)
+        $dontShowCb.FlatStyle = "Flat"
 
-        $btnYes                 = New-Object System.Windows.Forms.Button
-        $btnYes.DialogResult    = [System.Windows.Forms.DialogResult]::Yes
-        $btnYes.Location        = New-Object System.Drawing.Point(160, 270)
-        $btnYes.Size            = New-Object System.Drawing.Size(120, 34)
-        $btnYes.Text            = "Continue"
-        $btnYes.BackColor       = [System.Drawing.Color]::FromArgb(45, 45, 45)
-        $btnYes.ForeColor       = [System.Drawing.Color]::FromArgb(220, 220, 220)
-        $btnYes.FlatStyle       = "Flat"
-        $btnYes.Font            = New-Object System.Drawing.Font("Segoe UI", 9)
+        $btnYes = New-Object System.Windows.Forms.Button
+        $btnYes.DialogResult = [System.Windows.Forms.DialogResult]::Yes
+        $btnYes.Location = New-Object System.Drawing.Point(160, 270)
+        $btnYes.Size = New-Object System.Drawing.Size(120, 34)
+        $btnYes.Text = "Continue"
+        $btnYes.BackColor = [System.Drawing.Color]::FromArgb(45, 45, 45)
+        $btnYes.ForeColor = [System.Drawing.Color]::FromArgb(220, 220, 220)
+        $btnYes.FlatStyle = "Flat"
+        $btnYes.Font = New-Object System.Drawing.Font("Segoe UI", 9)
 
-        $btnNo                  = New-Object System.Windows.Forms.Button
-        $btnNo.DialogResult     = [System.Windows.Forms.DialogResult]::No
-        $btnNo.Location         = New-Object System.Drawing.Point(288, 270)
-        $btnNo.Size             = New-Object System.Drawing.Size(120, 34)
-        $btnNo.Text             = "Cancel"
-        $btnNo.BackColor        = [System.Drawing.Color]::FromArgb(45, 45, 45)
-        $btnNo.ForeColor        = [System.Drawing.Color]::FromArgb(220, 220, 220)
-        $btnNo.FlatStyle        = "Flat"
-        $btnNo.Font             = New-Object System.Drawing.Font("Segoe UI", 9)
+        $btnNo = New-Object System.Windows.Forms.Button
+        $btnNo.DialogResult = [System.Windows.Forms.DialogResult]::No
+        $btnNo.Location = New-Object System.Drawing.Point(288, 270)
+        $btnNo.Size = New-Object System.Drawing.Size(120, 34)
+        $btnNo.Text = "Cancel"
+        $btnNo.BackColor = [System.Drawing.Color]::FromArgb(45, 45, 45)
+        $btnNo.ForeColor = [System.Drawing.Color]::FromArgb(220, 220, 220)
+        $btnNo.FlatStyle = "Flat"
+        $btnNo.Font = New-Object System.Drawing.Font("Segoe UI", 9)
 
         $warnForm.Controls.Add($warnLabel)
         $warnForm.Controls.Add($dontShowCb)
         $warnForm.Controls.Add($btnYes)
         $warnForm.Controls.Add($btnNo)
-        $warnForm.AcceptButton  = $btnYes
-        $warnForm.CancelButton  = $btnNo
+        $warnForm.AcceptButton = $btnYes
+        $warnForm.CancelButton = $btnNo
 
         $result = $warnForm.ShowDialog()
         if ($result -eq "No" -or $result -eq "Cancel") { return }
@@ -1275,7 +1299,8 @@ Review scanned folders before sharing results.
                     New-Item -ItemType Directory -Path $configDir -Force | Out-Null
                 }
                 Add-Content -LiteralPath $script:CONFIG_FILE -Encoding UTF8 -Value "`nui:`n  warning_accepted: true"
-            } catch { }
+            }
+            catch { }
         }
     }
 
@@ -1285,42 +1310,43 @@ Review scanned folders before sharing results.
 
     $redactedPath = Get-RedactedPath -Path $TargetFolder
     $dirCount = (Get-ChildItem -Path $TargetFolder -Recurse -Directory -ErrorAction SilentlyContinue).Count
-    $rawSize  = ($allFiles | Measure-Object Length -Sum).Sum
+    $rawSize = ($allFiles | Measure-Object Length -Sum).Sum
     $totalSize = if ($rawSize) { [math]::Round($rawSize / 1MB, 2) } else { 0 }
 
-    $groups     = Get-CategoryFileGroups -AllFiles $allFiles -Config $config
-    $catLines   = $groups.CategoryLines
+    $groups = Get-CategoryFileGroups -AllFiles $allFiles -Config $config
+    $catLines = $groups.CategoryLines
     $promptCats = $groups.PromptCategories
 
     # Top-level contents
     $topStr = ($topItems | ForEach-Object {
-        $item = $_
-        $isSensitiveName    = Test-SensitiveName $item.Name
-        $isSensitiveContent = if (-not $item.PSIsContainer) { Test-SensitiveContent $item.FullName } else { $false }
+            $item = $_
+            $isSensitiveName = Test-SensitiveName $item.Name
+            $isSensitiveContent = if (-not $item.PSIsContainer) { Test-SensitiveContent $item.FullName } else { $false }
 
-        if ($isSensitiveName -or $isSensitiveContent) {
-            if ($securityAction -eq 'skip') { return }
-            if ($item.PSIsContainer) { "  [DIR]  [REDACTED]" } else { "  [FILE] [REDACTED]" }
-        }
-        elseif ($item.PSIsContainer) {
-            if (Test-SensitiveName $item.Name) {
+            if ($isSensitiveName -or $isSensitiveContent) {
                 if ($securityAction -eq 'skip') { return }
-                "  [DIR]  [REDACTED]"
-            } else { "  [DIR]  $($item.Name)" }
-        }
-        else { "  [FILE] $($item.Name)" }
-    }) -join "`n"
+                if ($item.PSIsContainer) { "  [DIR]  [REDACTED]" } else { "  [FILE] [REDACTED]" }
+            }
+            elseif ($item.PSIsContainer) {
+                if (Test-SensitiveName $item.Name) {
+                    if ($securityAction -eq 'skip') { return }
+                    "  [DIR]  [REDACTED]"
+                }
+                else { "  [DIR]  $($item.Name)" }
+            }
+            else { "  [FILE] $($item.Name)" }
+        }) -join "`n"
 
     # Video metadata
-    $videoFiles = @($allFiles | Where-Object { @(".mp4",".avi",".mkv",".mov",".wmv",".flv",".webm",".m4v",".mpg",".mpeg") -contains $_.Extension.ToLower() })
+    $videoFiles = @($allFiles | Where-Object { @(".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm", ".m4v", ".mpg", ".mpeg") -contains $_.Extension.ToLower() })
     $videoSummary = ""
     if ($videoFiles.Count -gt 0) {
         $meta = Get-VideoMetadata -VideoPath $videoFiles[0].FullName -Config $config
         $metaParts = @()
-        if ($meta.Duration)               { $metaParts += "Duration: $($meta.Duration)" }
-        if ($meta.Resolution)             { $metaParts += "Resolution: $($meta.Resolution)" }
-        if ($meta.Codec)                  { $metaParts += "Codec: $($meta.Codec)" }
-        if ($meta.FramesExtracted -gt 0)  { $metaParts += "Frames sampled: $($meta.FramesExtracted)" }
+        if ($meta.Duration) { $metaParts += "Duration: $($meta.Duration)" }
+        if ($meta.Resolution) { $metaParts += "Resolution: $($meta.Resolution)" }
+        if ($meta.Codec) { $metaParts += "Codec: $($meta.Codec)" }
+        if ($meta.FramesExtracted -gt 0) { $metaParts += "Frames sampled: $($meta.FramesExtracted)" }
         if ($metaParts.Count -gt 0) {
             $videoSummary = "`nVIDEO METADATA ($($videoFiles.Count) video files):`n  $($metaParts -join ' | ')"
         }
@@ -1349,7 +1375,7 @@ Keep it concise, informative, and plain. No bullet points or markdown headers.
 
     # Call API
     $bodyJson = @{
-        contents = @(@{ parts = @(@{ text = $prompt }) })
+        contents         = @(@{ parts = @(@{ text = $prompt }) })
         generationConfig = @{ maxOutputTokens = 8192 }
     } | ConvertTo-Json -Depth 8
 
@@ -1358,9 +1384,9 @@ Keep it concise, informative, and plain. No bullet points or markdown headers.
             -Uri $API_URL `
             -Method POST `
             -Headers @{
-                "x-goog-api-key" = $API_KEY
-                "Content-Type"   = "application/json"
-            } `
+            "x-goog-api-key" = $API_KEY
+            "Content-Type"   = "application/json"
+        } `
             -Body $bodyJson `
             -ErrorAction Stop
 
@@ -1368,7 +1394,8 @@ Keep it concise, informative, and plain. No bullet points or markdown headers.
             throw "Gemini returned an empty response."
         }
         $aiSummary = $resp.candidates[0].content.parts[0].text.Trim()
-    } catch {
+    }
+    catch {
         $aiSummary = "API error: $($_.Exception.Message)"
     }
 
@@ -1421,31 +1448,31 @@ function Show-ErrorPopup {
 function Show-SummaryPopup {
     param([string]$Title, [string]$Content)
 
-    $form                 = New-Object System.Windows.Forms.Form
-    $form.Text            = $Title
-    $form.Size            = New-Object System.Drawing.Size(760, 560)
-    $form.StartPosition   = "CenterScreen"
+    $form = New-Object System.Windows.Forms.Form
+    $form.Text = $Title
+    $form.Size = New-Object System.Drawing.Size(760, 560)
+    $form.StartPosition = "CenterScreen"
     $form.FormBorderStyle = "FixedSingle"
-    $form.MaximizeBox     = $false
-    $form.BackColor       = [System.Drawing.Color]::FromArgb(16, 16, 16)
+    $form.MaximizeBox = $false
+    $form.BackColor = [System.Drawing.Color]::FromArgb(16, 16, 16)
 
-    $tb             = New-Object System.Windows.Forms.RichTextBox
-    $tb.Dock        = "Fill"
-    $tb.ReadOnly    = $true
-    $tb.BackColor   = [System.Drawing.Color]::FromArgb(16, 16, 16)
-    $tb.ForeColor   = [System.Drawing.Color]::FromArgb(210, 210, 210)
-    $tb.Font        = New-Object System.Drawing.Font("Consolas", 10)
-    $tb.Text        = $Content
-    $tb.ScrollBars  = "Vertical"
+    $tb = New-Object System.Windows.Forms.RichTextBox
+    $tb.Dock = "Fill"
+    $tb.ReadOnly = $true
+    $tb.BackColor = [System.Drawing.Color]::FromArgb(16, 16, 16)
+    $tb.ForeColor = [System.Drawing.Color]::FromArgb(210, 210, 210)
+    $tb.Font = New-Object System.Drawing.Font("Consolas", 10)
+    $tb.Text = $Content
+    $tb.ScrollBars = "Vertical"
     $tb.BorderStyle = "None"
 
-    $btn            = New-Object System.Windows.Forms.Button
-    $btn.Text       = "Close"
-    $btn.Dock       = "Bottom"
-    $btn.Height     = 32
-    $btn.BackColor  = [System.Drawing.Color]::FromArgb(35, 35, 35)
-    $btn.ForeColor  = [System.Drawing.Color]::FromArgb(180, 180, 180)
-    $btn.FlatStyle  = "Flat"
+    $btn = New-Object System.Windows.Forms.Button
+    $btn.Text = "Close"
+    $btn.Dock = "Bottom"
+    $btn.Height = 32
+    $btn.BackColor = [System.Drawing.Color]::FromArgb(35, 35, 35)
+    $btn.ForeColor = [System.Drawing.Color]::FromArgb(180, 180, 180)
+    $btn.FlatStyle = "Flat"
     $btn.Add_Click({ $form.Close() })
 
     $form.Controls.Add($tb)
@@ -1464,7 +1491,7 @@ if ($args.Count -gt 0 -and $args[0] -eq "--register-context-menu") {
         $command = "`"$escapedExe`" `"%V`""
 
         $base = "HKLM:\SOFTWARE\Classes\Directory\shell\FolderSummary"
-        $cmd  = "$base\command"
+        $cmd = "$base\command"
         New-Item -Path $base -Force | Out-Null
         New-Item -Path $cmd  -Force | Out-Null
         Set-ItemProperty -Path $base -Name "(Default)" -Value "Summarize with AI"
@@ -1472,7 +1499,7 @@ if ($args.Count -gt 0 -and $args[0] -eq "--register-context-menu") {
         Set-ItemProperty -Path $cmd  -Name "(Default)" -Value $command
 
         $bgBase = "HKLM:\SOFTWARE\Classes\Directory\Background\shell\FolderSummary"
-        $bgCmd  = "$bgBase\command"
+        $bgCmd = "$bgBase\command"
         New-Item -Path $bgBase -Force | Out-Null
         New-Item -Path $bgCmd  -Force | Out-Null
         Set-ItemProperty -Path $bgBase -Name "(Default)" -Value "Summarize with AI"
@@ -1480,7 +1507,8 @@ if ($args.Count -gt 0 -and $args[0] -eq "--register-context-menu") {
         Set-ItemProperty -Path $bgCmd  -Name "(Default)" -Value $command
 
         exit 0
-    } catch {
+    }
+    catch {
         exit 1
     }
 }
@@ -1489,7 +1517,7 @@ if ($args.Count -gt 0 -and $args[0] -eq "--register-context-menu") {
 if ($Uninstall) {
     Invoke-Uninstall
 }
-elsif (-not [string]::IsNullOrWhiteSpace($FolderPath)) {
+elseif (-not [string]::IsNullOrWhiteSpace($FolderPath)) {
     Invoke-Summarize -TargetFolder $FolderPath
 }
 elseif ($Settings -or $script:IsInstalled) {
