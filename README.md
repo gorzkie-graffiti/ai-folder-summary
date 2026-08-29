@@ -9,7 +9,7 @@
 3. Paste your free Google Gemini API key
 4. Done. Right-click any folder → **Summarize with AI**
 
-The exe copies itself to `C:\Scripts\`, registers a Windows Explorer context menu entry, and from that point on it lives there. Double-click the installed exe anytime to change settings.
+The exe copies itself to `%LOCALAPPDATA%\FolderSummarizer\`, registers a Windows Explorer context menu entry for the current user, and from that point on it lives there. Double-click the installed exe anytime to change settings.
 
 No dependencies. No PowerShell scripts to run. No separate installer. The exe is the whole thing.
 
@@ -85,17 +85,17 @@ Invoke-PS2EXE -InputFile .\src\FolderSummarizer.ps1 -OutputFile .\build\folder-s
 
 ## Uninstall
 
-Double-click the installed exe (`C:\Scripts\folder-summarizer.exe`), go to Settings, and click **Uninstall**.
+Double-click the installed exe (`%LOCALAPPDATA%\FolderSummarizer\folder-summarizer.exe`), go to Settings, and click **Uninstall**.
 
 Or manually:
 
 ```powershell
-# Remove context menu (run as Administrator)
-Remove-Item -Path 'HKLM:\SOFTWARE\Classes\Directory\shell\FolderSummary' -Recurse -Force
-Remove-Item -Path 'HKLM:\SOFTWARE\Classes\Directory\Background\shell\FolderSummary' -Recurse -Force
+# Remove context menu
+Remove-Item -Path 'HKCU:\Software\Classes\Directory\shell\FolderSummary' -Recurse -Force
+Remove-Item -Path 'HKCU:\Software\Classes\Directory\Background\shell\FolderSummary' -Recurse -Force
 
 # Remove the exe
-Remove-Item -Path 'C:\Scripts\folder-summarizer.exe' -Force
+Remove-Item -Path "$env:LOCALAPPDATA\FolderSummarizer\folder-summarizer.exe" -Force
 
 # Remove config (optional)
 Remove-Item -Path "$env:USERPROFILE\.folder-summarizer" -Recurse -Force

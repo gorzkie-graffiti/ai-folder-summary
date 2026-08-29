@@ -2,7 +2,7 @@
 #  FolderSummarizer.ps1 — Self-installing AI Folder Summarizer
 # ============================================================
 #  Compile to .exe with ps2exe, then just run the exe.
-#  It copies itself to C:\Scripts\, registers the right-click
+#  It copies itself to the current user's local app-data folder, registers the right-click
 #  context menu, runs onboarding, and summarizes folders.
 # ============================================================
 
@@ -16,13 +16,13 @@ param(
 #  CONSTANTS
 # ============================================================
 
-$script:INSTALL_DIR = "C:\Scripts"
+$script:INSTALL_DIR = Join-Path $env:LOCALAPPDATA "FolderSummarizer"
 $script:EXE_NAME = "folder-summarizer.exe"
 $script:INSTALL_PATH = Join-Path $script:INSTALL_DIR $script:EXE_NAME
 $script:CONFIG_DIR = Join-Path $env:USERPROFILE ".folder-summarizer"
 $script:CONFIG_FILE = Join-Path $script:CONFIG_DIR "config.yaml"
-$script:REGISTRY_BASE = "HKLM:\SOFTWARE\Classes\Directory\shell\FolderSummary"
-$script:REGISTRY_BG = "HKLM:\SOFTWARE\Classes\Directory\Background\shell\FolderSummary"
+$script:REGISTRY_BASE = "HKCU:\Software\Classes\Directory\shell\FolderSummary"
+$script:REGISTRY_BG = "HKCU:\Software\Classes\Directory\Background\shell\FolderSummary"
 
 # ============================================================
 #  ARG RESOLUTION
@@ -30,7 +30,7 @@ $script:REGISTRY_BG = "HKLM:\SOFTWARE\Classes\Directory\Background\shell\FolderS
 #  ps2exe passes positional args via $args.
 # ============================================================
 
-if ([string]::IsNullOrWhiteSpace($FolderPath) -and $args.Count -gt 0) {
+if ($args.Count -gt 0) {
     # First positional arg could be a switch-like string or a path.
     $firstArg = $args[0]
     if ($firstArg -eq "--uninstall" -or $firstArg -eq "-Uninstall") {
@@ -39,8 +39,28 @@ if ([string]::IsNullOrWhiteSpace($FolderPath) -and $args.Count -gt 0) {
     elseif ($firstArg -eq "--settings" -or $firstArg -eq "-Settings") {
         $Settings = $true
     }
+    elseif ($firstArg -eq "register-context-menu" -or $firstArg -eq "--register-context-menu") {
+        $script:RegisterContextMenu = $true
+    }
     else {
         $FolderPath = $firstArg
+    }
+}
+
+# When compiled to .exe, ps2exe may bind CLI flags to the first
+# positional param ($FolderPath) instead of $args. Detect and fix.
+if (-not [string]::IsNullOrWhiteSpace($FolderPath)) {
+    if ($FolderPath -eq "register-context-menu" -or $FolderPath -eq "--register-context-menu") {
+        $script:RegisterContextMenu = $true
+        $FolderPath = $null
+    }
+    elseif ($FolderPath -eq "--uninstall" -or $FolderPath -eq "-Uninstall") {
+        $Uninstall = $true
+        $FolderPath = $null
+    }
+    elseif ($FolderPath -eq "--settings" -or $FolderPath -eq "-Settings") {
+        $Settings = $true
+        $FolderPath = $null
     }
 }
 
@@ -499,58 +519,30 @@ function Get-VideoMetadata {
 # ============================================================
 
 function Register-ContextMenu {
-    $needsAdmin = $true
-    try {
-        $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
-        $principal = New-Object Security.Principal.WindowsPrincipal($identity)
-        if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-            $needsAdmin = $true
-        }
-        else {
-            $needsAdmin = $false
-        }
-    }
-    catch { $needsAdmin = $true }
-
-    if ($needsAdmin) {
-        # Relaunch as admin
-        try {
-            $psi = New-Object System.Diagnostics.ProcessStartInfo
-            $psi.FileName = $script:INSTALL_PATH
-            $psi.Arguments = "--register-context-menu"
-            $psi.Verb = "runas"
-            $psi.UseShellExecute = $true
-            $psi.WindowStyle = "Hidden"
-            [System.Diagnostics.Process]::Start($psi) | Out-Null
-            return $true
-        }
-        catch {
-            return $false
-        }
-    }
-
-    # We are admin — do the registration
     $escapedExe = $script:INSTALL_PATH.Replace('"', '""')
-    $command = "`"$escapedExe`" `"%V`""
+    $folderCommand = "`"$escapedExe`" `"%1`""
+    $backgroundCommand = "`"$escapedExe`" `"%V`""
 
     try {
-        # Right-click ON a folder
-        $base = "HKLM:\SOFTWARE\Classes\Directory\shell\FolderSummary"
+        # HKCU\Software\Classes is merged into Explorer's class registry and does
+        # not need elevation. %1 applies to a selected directory; %V applies to
+        # the current folder when its background is clicked.
+        $base = $script:REGISTRY_BASE
         $cmd = "$base\command"
         New-Item -Path $base -Force | Out-Null
         New-Item -Path $cmd  -Force | Out-Null
         Set-ItemProperty -Path $base -Name "(Default)" -Value "Summarize with AI"
         Set-ItemProperty -Path $base -Name "Icon" -Value "shell32.dll,21"
-        Set-ItemProperty -Path $cmd  -Name "(Default)" -Value $command
+        Set-ItemProperty -Path $cmd  -Name "(Default)" -Value $folderCommand
 
         # Right-click INSIDE a folder (background)
-        $bgBase = "HKLM:\SOFTWARE\Classes\Directory\Background\shell\FolderSummary"
+        $bgBase = $script:REGISTRY_BG
         $bgCmd = "$bgBase\command"
         New-Item -Path $bgBase -Force | Out-Null
         New-Item -Path $bgCmd  -Force | Out-Null
         Set-ItemProperty -Path $bgBase -Name "(Default)" -Value "Summarize with AI"
         Set-ItemProperty -Path $bgBase -Name "Icon" -Value "shell32.dll,21"
-        Set-ItemProperty -Path $bgCmd  -Name "(Default)" -Value $command
+        Set-ItemProperty -Path $bgCmd  -Name "(Default)" -Value $backgroundCommand
 
         return $true
     }
@@ -561,8 +553,8 @@ function Register-ContextMenu {
 
 function Unregister-ContextMenu {
     try {
-        Remove-Item -Path "HKLM:\SOFTWARE\Classes\Directory\shell\FolderSummary" -Recurse -Force -ErrorAction SilentlyContinue
-        Remove-Item -Path "HKLM:\SOFTWARE\Classes\Directory\Background\shell\FolderSummary" -Recurse -Force -ErrorAction SilentlyContinue
+        Remove-Item -Path $script:REGISTRY_BASE -Recurse -Force -ErrorAction SilentlyContinue
+        Remove-Item -Path $script:REGISTRY_BG -Recurse -Force -ErrorAction SilentlyContinue
     }
     catch { }
 }
@@ -700,7 +692,10 @@ function Show-Onboarding {
     $txtApiKey.ForeColor = $fgText
     $txtApiKey.BorderStyle = "FixedSingle"
     $txtApiKey.UseSystemPasswordChar = $true
-    $txtApiKey.PlaceholderText = "Paste your API key here..."
+    $txtApiKey.Text = ""
+    # PlaceholderText is not available in .NET Framework 4.x (ps2exe target)
+    $txtApiKeyTip = New-Object System.Windows.Forms.ToolTip
+    $txtApiKeyTip.SetToolTip($txtApiKey, "Paste your API key here...")
     $form.Controls.Add($txtApiKey)
 
     $btnShowKey = New-Object System.Windows.Forms.Button
@@ -778,7 +773,8 @@ function Show-Onboarding {
     $form.Controls.Add($lblFfmpegDesc)
 
     $chkFfmpeg = New-Object System.Windows.Forms.CheckBox
-    $chkFfmpeg.Location = New-Object System.Drawing.Point(428, $y - 2)
+    $ffmpegY = [int]$y - 2
+    $chkFfmpeg.Location = New-Object System.Drawing.Point(428, $ffmpegY)
     $chkFfmpeg.Size = New-Object System.Drawing.Size(80, 24)
     $chkFfmpeg.Text = "Install"
     $chkFfmpeg.ForeColor = $fgText
@@ -899,7 +895,7 @@ function Show-Onboarding {
                 }
             }
 
-            # Step 3: Copy exe to C:\Scripts\
+            # Step 3: Copy the executable to the current user's app-data folder.
             $lblStatus.ForeColor = $fgDim
             $lblStatus.Text = "Installing to $script:INSTALL_DIR..."
             $form.Refresh()
@@ -918,53 +914,16 @@ function Show-Onboarding {
                 return
             }
 
-            # Step 4: Register context menu (needs admin — will UAC prompt)
-            $lblStatus.Text = "Registering context menu (you may see a UAC prompt)..."
+            # Step 4: Register the per-user context menu. This does not require
+            # administrator rights and therefore works from a normal double-click.
+            $lblStatus.Text = "Registering context menu..."
             $form.Refresh()
 
-            $registered = $false
             try {
-                # Try direct registration first (in case we're already admin)
-                $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
-                $principal = New-Object Security.Principal.WindowsPrincipal($identity)
-                if ($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-                    $escapedExe = $script:INSTALL_PATH.Replace('"', '""')
-                    $command = "`"$escapedExe`" `"%V`""
-
-                    $base = "HKLM:\SOFTWARE\Classes\Directory\shell\FolderSummary"
-                    $cmd = "$base\command"
-                    New-Item -Path $base -Force | Out-Null
-                    New-Item -Path $cmd  -Force | Out-Null
-                    Set-ItemProperty -Path $base -Name "(Default)" -Value "Summarize with AI"
-                    Set-ItemProperty -Path $base -Name "Icon" -Value "shell32.dll,21"
-                    Set-ItemProperty -Path $cmd  -Name "(Default)" -Value $command
-
-                    $bgBase = "HKLM:\SOFTWARE\Classes\Directory\Background\shell\FolderSummary"
-                    $bgCmd = "$bgBase\command"
-                    New-Item -Path $bgBase -Force | Out-Null
-                    New-Item -Path $bgCmd  -Force | Out-Null
-                    Set-ItemProperty -Path $bgBase -Name "(Default)" -Value "Summarize with AI"
-                    Set-ItemProperty -Path $bgBase -Name "Icon" -Value "shell32.dll,21"
-                    Set-ItemProperty -Path $bgCmd  -Name "(Default)" -Value $command
-                    $registered = $true
-                }
-                else {
-                    # Relaunch self as admin to register
-                    $psi = New-Object System.Diagnostics.ProcessStartInfo
-                    $psi.FileName = $script:INSTALL_PATH
-                    $psi.Arguments = "--register-context-menu"
-                    $psi.Verb = "runas"
-                    $psi.UseShellExecute = $true
-                    $psi.WindowStyle = "Hidden"
-                    $adminProc = [System.Diagnostics.Process]::Start($psi)
-                    if ($null -ne $adminProc) {
-                        $adminProc.WaitForExit(30000)
-                        if ($adminProc.ExitCode -eq 0) { $registered = $true }
-                    }
-                }
+                $registered = Register-ContextMenu
             }
             catch {
-                # Silently fail — user can register later
+                $registered = $false
             }
 
             # Done
@@ -974,7 +933,7 @@ function Show-Onboarding {
             }
             else {
                 $lblStatus.ForeColor = $fgWarn
-                $lblStatus.Text = "Installed but context menu not registered. Re-run as Administrator to register."
+                $lblStatus.Text = "Installed, but the context menu could not be registered. Run the app again to retry."
             }
 
             $btnInstall.Text = "Done"
@@ -1484,33 +1443,11 @@ function Show-SummaryPopup {
 #  ENTRY POINT
 # ============================================================
 
-# Handle --register-context-menu (called from UAC elevation)
-if ($args.Count -gt 0 -and $args[0] -eq "--register-context-menu") {
-    try {
-        $escapedExe = $script:INSTALL_PATH.Replace('"', '""')
-        $command = "`"$escapedExe`" `"%V`""
-
-        $base = "HKLM:\SOFTWARE\Classes\Directory\shell\FolderSummary"
-        $cmd = "$base\command"
-        New-Item -Path $base -Force | Out-Null
-        New-Item -Path $cmd  -Force | Out-Null
-        Set-ItemProperty -Path $base -Name "(Default)" -Value "Summarize with AI"
-        Set-ItemProperty -Path $base -Name "Icon" -Value "shell32.dll,21"
-        Set-ItemProperty -Path $cmd  -Name "(Default)" -Value $command
-
-        $bgBase = "HKLM:\SOFTWARE\Classes\Directory\Background\shell\FolderSummary"
-        $bgCmd = "$bgBase\command"
-        New-Item -Path $bgBase -Force | Out-Null
-        New-Item -Path $bgCmd  -Force | Out-Null
-        Set-ItemProperty -Path $bgBase -Name "(Default)" -Value "Summarize with AI"
-        Set-ItemProperty -Path $bgBase -Name "Icon" -Value "shell32.dll,21"
-        Set-ItemProperty -Path $bgCmd  -Name "(Default)" -Value $command
-
-        exit 0
-    }
-    catch {
-        exit 1
-    }
+# Handle the internal registration token. A plain positional token is used
+# because ps2exe consumes double-dash arguments before the script sees them.
+if (($args.Count -gt 0 -and ($args[0] -eq "register-context-menu" -or $args[0] -eq "--register-context-menu")) -or $script:RegisterContextMenu) {
+    if (Register-ContextMenu) { exit 0 }
+    exit 1
 }
 
 # Route based on mode

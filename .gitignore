@@ -10,3 +10,4 @@ config.local.yaml
 *.swp
 Thumbs.db
 .DS_Store
+/codex/

@@ -6,7 +6,7 @@ All settings live in:
 %USERPROFILE%\.folder-summarizer\config.yaml
 ```
 
-Open Settings by double-clicking `C:\Scripts\folder-summarizer.exe`, or edit the YAML file directly.
+Open Settings by double-clicking `%LOCALAPPDATA%\FolderSummarizer\folder-summarizer.exe`, or edit the YAML file directly.
 
 ## Full Example
 

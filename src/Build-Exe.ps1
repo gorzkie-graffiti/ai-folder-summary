@@ -56,8 +56,8 @@ if ($LASTEXITCODE -eq 0 -and (Test-Path -LiteralPath $outputExe)) {
     Write-Host "=============================================" -ForegroundColor Green
     Write-Host ""
     Write-Host "To install:" -ForegroundColor White
-    Write-Host "  1. Right-click folder-summarizer.exe > Run as administrator" -ForegroundColor Yellow
-    Write-Host "  2. The onboarding wizard will handle everything." -ForegroundColor DarkGray
+    Write-Host "  1. Double-click folder-summarizer.exe" -ForegroundColor Yellow
+    Write-Host "  2. The onboarding wizard will handle everything (no administrator rights needed)." -ForegroundColor DarkGray
     Write-Host ""
 }
 else {
