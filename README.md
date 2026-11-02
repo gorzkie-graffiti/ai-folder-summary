@@ -104,10 +104,12 @@ Remove-Item -Path "$env:USERPROFILE\.folder-summarizer" -Recurse -Force
 ## License
 
 This project is **source-available, not open source**. It is licensed under the
-[Noncommercial Copyleft License 1.0](LICENSE).
+[Noncommercial Copyleft License 1.1](LICENSE).
 
-- **No commercial use.** You may not sell it, bundle it into a paid product, or use
-  it to provide a paid service.
+- **No paid commercial use.** You may not sell it, charge for access or hosting,
+  offer paid support based on it, or bundle it into a paid product. Internal use,
+  evaluation, and personal/hobby projects are fine — including at for-profit
+  companies.
 - **No closed source.** Any modified version you distribute must be released in full
   under the same license, with complete source code.
 
