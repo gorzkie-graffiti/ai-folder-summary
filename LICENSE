@@ -1,133 +1,110 @@
+# Noncommercial Copyleft License 1.0
+
 Required Notice: Copyright (c) 2026 gorzkie-graffiti
 
-# PolyForm Noncommercial License 1.0.0
+This is a source-available license. It is not an open-source license.
 
-<https://polyformproject.org/licenses/noncommercial/1.0.0>
+## 1. Acceptance
 
-## Acceptance
+To receive any license under these terms, you must agree to them as binding
+obligations and as conditions of every license granted to you.
 
-In order to get any license under these terms, you must agree
-to them as both strict obligations and conditions to all
-your licenses.
+## 2. Copyright License
 
-## Copyright License
+The licensor grants you a copyright license to do everything with the software
+that would otherwise infringe the licensor's copyright in it, but only for a
+Noncommercial Purpose and only as permitted by this license.
 
-The licensor grants you a copyright license for the
-software to do everything you might do with the software
-that would otherwise infringe the licensor's copyright
-in it for any permitted purpose.  However, you may
-only distribute the software according to [Distribution
-License](#distribution-license) and make changes or new works
-based on the software according to [Changes and New Works
-License](#changes-and-new-works-license).
+## 3. Noncommercial Purpose
 
-## Distribution License
+A "Noncommercial Purpose" is any purpose that is not intended for or directed
+toward commercial advantage or monetary compensation. Without limiting that
+definition, the following are commercial and are not Noncommercial Purposes:
 
-The licensor grants you an additional copyright license
-to distribute copies of the software.  Your license
-to distribute covers distributing the software with
-changes and new works permitted by [Changes and New Works
-License](#changes-and-new-works-license).
+(a) selling, renting, leasing, licensing, or otherwise charging anyone for the
+software or a derivative work;
 
-## Notices
+(b) offering the software or a derivative work as a paid service, including
+software-as-a-service, hosted access, hosting, consulting, or support;
 
-You must ensure that anyone who gets a copy of any part of
-the software from you also gets a copy of these terms or the
-URL for them above, as well as copies of any plain-text lines
-beginning with `Required Notice:` that the licensor provided
-with the software.  For example:
+(c) bundling the software or a derivative work into a product, service, or
+distribution for which you charge, or that is used to advertise or sell
+something else;
 
-> Required Notice: Copyright Yoyodyne, Inc. (http://example.com)
+(d) use by a for-profit entity in the operation of its business, including
+internal use to produce goods or services for sale;
 
-## Changes and New Works License
+(e) use intended to generate revenue, advertising income, subscription income,
+or other commercial benefit.
 
-The licensor grants you an additional copyright license to
-make changes and new works based on the software for any
-permitted purpose.
+Use by a charitable organization, educational institution, public research
+organization, public safety or health organization, environmental protection
+organization, or government institution for its public-interest mission is a
+Noncommercial Purpose, regardless of the source of its funding.
 
-## Patent License
+## 4. Distribution, Copyleft, and Source Code
 
-The licensor grants you a patent license for the software that
-covers patent claims the licensor can license, or becomes able
-to license, that you would infringe by using the software.
+You may distribute the software or derivative works only if you:
 
-## Noncommercial Purposes
+(a) license the entire work, including all modifications, under this same
+license;
 
-Any noncommercial purpose is a permitted purpose.
+(b) give every recipient the complete corresponding source code of the version
+you distribute, in a form suitable for modification, together with these terms;
 
-## Personal Uses
+(c) keep all copyright, attribution, and license notices intact; and
 
-Personal use for research, experiment, and testing for
-the benefit of public knowledge, personal study, private
-entertainment, hobby projects, amateur pursuits, or religious
-observance, without any anticipated commercial application,
-is use for a permitted purpose.
+(d) do not distribute or make available any version in binary-only, obfuscated,
+minified, or otherwise source-withheld form.
 
-## Noncommercial Organizations
+If you make the software or a derivative work available to anyone over a
+network, you must also make the complete corresponding source code of that
+version available to those users, free of charge, under this same license.
 
-Use by any charitable organization, educational institution,
-public research organization, public safety or health
-organization, environmental protection organization,
-or government institution is use for a permitted purpose
-regardless of the source of funding or obligations resulting
-from the funding.
+You may not sublicense, relicense, or dual-license the software or any
+derivative work under other terms, except with the licensor's prior written
+permission.
 
-## Fair Use
+## 5. Commercial License
 
-You may have "fair use" rights for the software under the
-law. These terms do not limit them.
+No commercial rights are granted under this license. The licensor may grant
+commercial rights only in a separate written agreement. Paying for the software,
+receiving it from a third party, or complying with these terms does not give you
+a commercial license.
 
-## No Other Rights
+## 6. Patent License
 
-These terms do not allow you to sublicense or transfer any of
-your licenses to anyone else, or prevent the licensor from
-granting licenses to anyone else.  These terms do not imply
-any other licenses.
+The licensor grants you a patent license covering patent claims the licensor can
+license, or becomes able to license, that you would infringe by using the
+software. This patent license ends immediately if you make any written claim
+that the software infringes or contributes to infringement of any patent.
 
-## Patent Defense
+## 7. Termination
 
-If you make any written claim that the software infringes or
-contributes to infringement of any patent, your patent license
-for the software granted under these terms ends immediately. If
-your company makes such a claim, your patent license ends
-immediately for work on behalf of your company.
+Your licenses end automatically if you violate these terms. If you are notified
+in writing of a violation and come into full compliance, including correcting
+past violations, within 32 days of the notice, your licenses are reinstated.
+The licensor may also terminate your licenses for any breach that is not cured.
 
-## Violations
+## 8. No Warranty
 
-The first time you are notified in writing that you have
-violated any of these terms, or done anything with the software
-not covered by your licenses, your licenses can nonetheless
-continue if you come into full compliance with these terms,
-and take practical steps to correct past violations, within
-32 days of receiving notice.  Otherwise, all your licenses
-end immediately.
+As far as the law allows, the software comes as is, without any warranty or
+condition, express or implied, including merchantability, fitness for a
+particular purpose, and non-infringement.
 
-## No Liability
+## 9. No Liability
 
-***As far as the law allows, the software comes as is, without
-any warranty or condition, and the licensor will not be liable
-to you for any damages arising out of these terms or the use
-or nature of the software, under any kind of legal claim.***
+As far as the law allows, the licensor will not be liable to you for any
+damages arising out of these terms or the use or nature of the software, under
+any kind of legal claim.
 
-## Definitions
+## 10. Definitions
 
-The **licensor** is the individual or entity offering these
-terms, and the **software** is the software the licensor makes
-available under these terms.
+"The licensor" is the copyright holder offering these terms.
 
-**You** refers to the individual or entity agreeing to these
-terms.
+"The software" is the software the licensor makes available under these terms.
 
-**Your company** is any legal entity, sole proprietorship,
-or other kind of organization that you work for, plus all
-organizations that have control over, are under the control of,
-or are under common control with that organization.  **Control**
-means ownership of substantially all the assets of an entity,
-or the power to direct its management and policies by vote,
-contract, or otherwise.  Control can be direct or indirect.
+"You" is the individual or entity agreeing to these terms.
 
-**Your licenses** are all the licenses granted to you for the
-software under these terms.
-
-**Use** means anything you do with the software requiring one
-of your licenses.
+"Derivative work" means any work based on the software, including modifications,
+adaptations, and works that incorporate the software in whole or in part.

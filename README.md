@@ -103,11 +103,15 @@ Remove-Item -Path "$env:USERPROFILE\.folder-summarizer" -Recurse -Force
 
 ## License
 
-Licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE).
+This project is **source-available, not open source**. It is licensed under the
+[Noncommercial Copyleft License 1.0](LICENSE).
 
-You may use, modify, and share this software for any **noncommercial** purpose.
-Commercial use — selling it, bundling it into a paid product, or using it to
-provide a paid service — is not permitted. For commercial licensing, contact
-the maintainer.
+- **No commercial use.** You may not sell it, bundle it into a paid product, or use
+  it to provide a paid service.
+- **No closed source.** Any modified version you distribute must be released in full
+  under the same license, with complete source code.
+
+Commercial rights are available only under a separate written agreement with the
+maintainer.
 
 Required Notice: Copyright (c) 2026 gorzkie-graffiti
